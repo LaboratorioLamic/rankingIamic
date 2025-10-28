@@ -800,7 +800,7 @@
                 <input type="text" id="nome-curso" placeholder="Nome do Curso" required oninput="updateCursoPreview()">
                 <input type="text" id="desc-curso" placeholder="Descrição do Curso" required oninput="updateCursoPreview()">
                 <div class="nota-container">
-                    <input type="number" id="nota-curso" placeholder="Nota da Avaliação (0-10)" min="0" max="10" step="0.1" required>
+                    <input type="number" id="nota-curso" placeholder="Nota da Avaliação (0-10)" min="0" max="10" step="0.1">
                     <label style="margin-left: 20px;">Pontuar: <input type="checkbox" id="pontuar-curso" checked></label>
                 </div>
                 <button type="button" onclick="toggleSelectorsCurso()">Selecionar Ícone</button>
@@ -2018,56 +2018,75 @@ async function init() {
         }
     });
 
-document.getElementById('add-cursos-form').addEventListener('submit', async (e) => {
+    document.getElementById('add-cursos-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const colId = parseInt(document.getElementById('colaborador-cursos').value);
     const nome = document.getElementById('nome-curso').value;
     const descricao = document.getElementById('desc-curso').value;
-    const nota = parseFloat(document.getElementById('nota-curso').value);
+    const notaInput = document.getElementById('nota-curso');
+    const notaValor = notaInput.value.trim() === '' ? null : parseFloat(notaInput.value);
     const pontuar = document.getElementById('pontuar-curso').checked;
     const icone = document.getElementById('icone-curso').value;
     const cor = document.getElementById('cor-curso').value;
-    if (colId && nome && icone && !isNaN(nota) && nota >= 0 && nota <= 10) {
-        const col = colaboradores.find(c => c.id === colId);
-        if (col) {
-            // Adicionar curso
-            col.cursos.push({ nome, icone, cor, descricao });
-            col.historico.push({
-                tipo: 'curso',
-                valor: nome,
-                descricao: `Curso "${nome}" adicionado em ${new Date().toLocaleDateString('pt-BR')}`,
-                data: new Date().toLocaleDateString('pt-BR')
-            });
-            // Adicionar nota e pontos, se aplicável
-            col.notas.push(nota);
-            col.historico.push({
-                tipo: 'nota',
-                valor: nota,
-                descricao: `Nota ${nota} no curso "${nome}" em ${new Date().toLocaleDateString('pt-BR')}`,
-                data: new Date().toLocaleDateString('pt-BR')
-            });
-            if (pontuar) {
-                const pontos = nota * 10;
-                col.pontos += pontos;
-                col.historico.push({
-                    tipo: 'pontos',
-                    valor: pontos,
-                    descricao: `Ganhou ${pontos} pontos pela nota ${nota} no curso "${nome}" em ${new Date().toLocaleDateString('pt-BR')}`,
-                    data: new Date().toLocaleDateString('pt-BR')
-                });
-            }
-            await saveData({ colaboradores, cargos: [...cargos], unidades: [...unidades] });
-            document.getElementById('add-cursos-form').reset();
-            document.getElementById('pontuar-curso').checked = true; // Restaurar checkbox como marcado
-            document.getElementById('icons-selector-curso').style.display = 'none';
-            document.getElementById('colors-selector-curso').style.display = 'none';
-            updateHistoricoCursos();
-            updateCursoPreview();
-            updateRanking();
-        }
-    } else {
-        alert('Preencha todos os campos corretamente e selecione um ícone!');
+
+    if (!colId || !nome || !icone) {
+        alert('Preencha todos os campos obrigatórios e selecione um ícone!');
+        return;
     }
+
+    // Validação da nota: se preenchida, deve estar entre 0 e 10
+    if (notaValor !== null && (isNaN(notaValor) || notaValor < 0 || notaValor > 10)) {
+        alert('A nota deve estar entre 0 e 10!');
+        return;
+    }
+
+    const col = colaboradores.find(c => c.id === colId);
+    if (!col) return;
+
+    // Adiciona o curso
+    col.cursos.push({ nome, icone, cor, descricao });
+    col.historico.push({
+        tipo: 'curso',
+        valor: nome,
+        descricao: `Curso "${nome}" adicionado em ${new Date().toLocaleDateString('pt-BR')}`,
+        data: new Date().toLocaleDateString('pt-BR')
+    });
+
+    // Se houver nota válida
+    if (notaValor !== null) {
+        col.notas.push(notaValor);
+        col.historico.push({
+            tipo: 'nota',
+            valor: notaValor,
+            descricao: `Nota ${notaValor} no curso "${nome}" em ${new Date().toLocaleDateString('pt-BR')}`,
+            data: new Date().toLocaleDateString('pt-BR')
+        });
+
+        // Só pontua se a nota estiver preenchida e o checkbox estiver marcado
+        if (pontuar) {
+            const pontos = notaValor * 10;
+            col.pontos += pontos;
+            col.historico.push({
+                tipo: 'pontos',
+                valor: pontos,
+                descricao: `Ganhou ${pontos} pontos pela nota ${notaValor} no curso "${nome}" em ${new Date().toLocaleDateString('pt-BR')}`,
+                data: new Date().toLocaleDateString('pt-BR')
+            });
+        }
+    }
+    // Se nota estiver em branco: NÃO adiciona nota nem pontos, mesmo com checkbox marcado
+
+    await saveData({ colaboradores, cargos: [...cargos], unidades: [...unidades] });
+    
+    // Reset do formulário
+    document.getElementById('add-cursos-form').reset();
+    document.getElementById('pontuar-curso').checked = true;
+    document.getElementById('icons-selector-curso').style.display = 'none';
+    document.getElementById('colors-selector-curso').style.display = 'none';
+    
+    updateHistoricoCursos();
+    updateCursoPreview();
+    updateRanking();
 });
 
 document.getElementById('add-nota-form').addEventListener('submit', async (e) => {
@@ -2199,7 +2218,7 @@ document.getElementById('colaborador-cursos').addEventListener('change', () => {
                 div.appendChild(editBtn);
                 const removeBtn = document.createElement('button');
                 removeBtn.textContent = 'Remover';
-                removeBtn.onclick = () => removeHistorico(col.id, col.historico.findIndex(e => e === entry), 'pontos');
+                removeBtn.onclick = () => removePonto(col.id, col.historico.findIndex(e => e === entry));
                 div.appendChild(removeBtn);
                 li.appendChild(div);
                 ul.appendChild(li);
@@ -2210,6 +2229,19 @@ document.getElementById('colaborador-cursos').addEventListener('change', () => {
     }
 }
 
+function removePonto(colId, idx) {
+    const col = colaboradores.find(c => c.id === colId);
+    if (col && confirm('Deseja realmente excluir este registro de pontos?')) {
+        const entry = col.historico[idx];
+        // Remove apenas o ponto do histórico
+        col.historico.splice(idx, 1);
+        // Subtrai o valor dos pontos totais
+        col.pontos -= entry.valor;
+        saveData({ colaboradores, cargos: [...cargos], unidades: [...unidades] });
+        updateHistoricoPontos();
+        updateRanking();
+    }
+}
 
 function updateHistoricoConquistas() {
     const colId = parseInt(document.getElementById('colaborador-conquista').value);
@@ -2299,7 +2331,7 @@ function updateHistoricoNotas() {
                 div.appendChild(editBtn);
                 const removeBtn = document.createElement('button');
                 removeBtn.textContent = 'Remover';
-                removeBtn.onclick = () => removeHistorico(col.id, col.historico.findIndex(e => e === entry), 'nota');
+                removeBtn.onclick = () => removeNota(col.id, col.historico.findIndex(e => e === entry));
                 div.appendChild(removeBtn);
                 li.appendChild(div);
                 ul.appendChild(li);
@@ -2307,6 +2339,32 @@ function updateHistoricoNotas() {
             frame.appendChild(ul);
             historicoDiv.appendChild(frame);
         }
+    }
+}
+
+function removeNota(colId, idx) {
+    const col = colaboradores.find(c => c.id === colId);
+    if (col && confirm('Deseja realmente excluir esta nota?')) {
+        const entry = col.historico[idx];
+        // Remove apenas a entrada de nota do histórico
+        col.historico.splice(idx, 1);
+        // Remove a nota do array de notas
+        const notaIdx = col.notas.indexOf(entry.valor);
+        if (notaIdx !== -1) col.notas.splice(notaIdx, 1);
+        // Se houver pontos associados a esta nota (via curso ou nota avulsa com pontuação), remover
+        const pontosRelacionados = col.historico.findIndex(p => 
+            p.tipo === 'pontos' && 
+            p.descricao.includes(`pela nota ${entry.valor}`) && 
+            p.descricao.includes(entry.descricao.split(' no curso ')[1]?.split(' em ')[0] || '')
+        );
+        if (pontosRelacionados !== -1) {
+            const pontosEntry = col.historico[pontosRelacionados];
+            col.pontos -= pontosEntry.valor;
+            col.historico.splice(pontosRelacionados, 1);
+        }
+        saveData({ colaboradores, cargos: [...cargos], unidades: [...unidades] });
+        updateHistoricoNotas();
+        updateRanking();
     }
 }
 
