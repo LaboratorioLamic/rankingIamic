@@ -124,8 +124,10 @@
         .filters {
             display: flex;
             justify-content: center;
-            gap: 20px;
+            gap: 10px;
             margin-bottom: 40px;
+            max-width: 600px;
+            margin: 0 auto;
         }
         .filter select {
             padding: 10px;
@@ -133,6 +135,7 @@
             color: #E0E7F0;
             border: none;
             border-radius: 5px;
+            gap: 20px;
         }
         .filter select:disabled {
             background: #2E3A59;
@@ -1396,23 +1399,50 @@ function getFilteredColaboradores() {
 
     filtered = filtered.map(col => {
         const cloned = { ...col, pontos: 0, notas: [], historico: [], conquistas: [], cursos: [] };
+        
         col.historico.forEach(entry => {
-            const [day, month, year] = entry.data.split('/');
-            if (filtroAno === 'todos' || (year === filtroAno && (filtroMes === 'todos' || month === filtroMes))) {
+            let incluir = false;
+
+            if (filtroAno === 'todos') {
+                incluir = true;
+            } else if (filtroAno === 'manual') {
+                const dataInicioInput = document.getElementById('filtro-data-inicio').value;
+                const dataFimInput = document.getElementById('filtro-data-fim').value;
+                if (dataInicioInput && dataFimInput) {
+                    const [dia, mes, ano] = entry.data.split('/').map(Number);
+                    const dataEntry = new Date(ano, mes - 1, dia);
+                    const inicio = new Date(dataInicioInput);
+                    const fim = new Date(dataFimInput);
+                    fim.setHours(23, 59, 59, 999);
+                    incluir = dataEntry >= inicio && dataEntry <= fim;
+                }
+            } else {
+                const [dia, mes, ano] = entry.data.split('/').map(Number);
+                incluir = ano == filtroAno && (filtroMes === 'todos' || mes == filtroMes);
+            }
+
+            if (incluir) {
                 cloned.historico.push(entry);
                 if (entry.tipo === 'pontos') cloned.pontos += entry.valor;
                 if (entry.tipo === 'nota') cloned.notas.push(entry.valor);
-                if (entry.tipo === 'conquista') cloned.conquistas.push(col.conquistas.find(c => c.nome === entry.valor));
-                if (entry.tipo === 'curso') cloned.cursos.push(col.cursos.find(c => c.nome === entry.valor));
+                if (entry.tipo === 'conquista') {
+                    const conq = col.conquistas.find(c => c.nome === entry.valor);
+                    if (conq) cloned.conquistas.push(conq);
+                }
+                if (entry.tipo === 'curso') {
+                    const curso = col.cursos.find(c => c.nome === entry.valor);
+                    if (curso) cloned.cursos.push(curso);
+                }
             }
         });
+
         cloned.notaMedia = calculateNotaMedia(cloned.notas);
         return cloned;
     }).filter(col => col.historico.length > 0 || filtroAno === 'todos');
 
     return filtered.sort((a, b) => {
-        if (b.pontos !== a.pontos) return b.pontos - a.pontos; // Ordena por pontos (descendente)
-        return b.notaMedia - a.notaMedia; // Desempate por média de notas (descendente)
+        if (b.pontos !== a.pontos) return b.pontos - a.pontos;
+        return b.notaMedia - a.notaMedia;
     });
 }
 
@@ -2440,7 +2470,12 @@ function removeNota(colId, idx) {
 function updateAnoFilter() {
     const anoSelect = document.getElementById('filtro-ano');
     const currentYear = new Date().getFullYear();
-    anoSelect.innerHTML = '<option value="todos">Todos</option>'; // Reseta as opções
+
+    anoSelect.innerHTML = `
+        <option value="todos">Todos</option>
+        <option value="manual">Manual</option>
+    `;
+
     for (let i = 0; i < 3; i++) {
         const year = currentYear - i;
         const option = document.createElement('option');
@@ -2448,6 +2483,98 @@ function updateAnoFilter() {
         option.textContent = year;
         anoSelect.appendChild(option);
     }
+
+    // Remove container antigo (se existir)
+    const oldContainer = document.getElementById('manual-date-range');
+    if (oldContainer) oldContainer.remove();
+
+    // Cria container para seleção manual (em coluna)
+    const dateContainer = document.createElement('div');
+    dateContainer.id = 'manual-date-range';
+    dateContainer.style.cssText = `
+        width: 100%;
+        text-align: center;
+        margin-top: 15px;
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+    `;
+
+    const campoDe = document.createElement('div');
+    campoDe.style.cssText = `
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        max-width: 280px;
+        justify-content: center;
+    `;
+    campoDe.innerHTML = `
+        <label style="color: #E0E7F0; font-size: 14px; white-space: nowrap; width: 40px;">De:</label>
+        <input type="date" id="filtro-data-inicio" style="padding: 8px; border-radius: 5px; border: none; background: #3A5A7D; color: #E0E7F0; flex: 1; min-width: 140px;">
+    `;
+
+    const campoAte = document.createElement('div');
+    campoAte.style.cssText = `
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        max-width: 280px;
+        justify-content: center;
+    `;
+    campoAte.innerHTML = `
+        <label style="color: #E0E7F0; font-size: 14px; white-space: nowrap; width: 40px;">Até:</label>
+        <input type="date" id="filtro-data-fim" style="padding: 8px; border-radius: 5px; border: none; background: #3A5A7D; color: #E0E7F0; flex: 1; min-width: 140px;">
+    `;
+
+    dateContainer.appendChild(campoDe);
+    dateContainer.appendChild(campoAte);
+
+    // Insere após o filtro de mês
+    const mesFilterDiv = document.querySelector('#filtro-mes').parentElement;
+    mesFilterDiv.parentElement.insertBefore(dateContainer, mesFilterDiv.nextSibling);
+
+    // Controle de visibilidade e estado do filtro de mês
+    anoSelect.onchange = function () {
+        const mesSelect = document.getElementById('filtro-mes');
+        const mesLabel = mesSelect.previousElementSibling; // label "Visualizar por Mês:"
+        const dateContainer = document.getElementById('manual-date-range');
+        const isManual = this.value === 'manual';
+        const isYearSelected = !isManual && this.value !== 'todos';
+
+        // Mostra/oculta filtro de mês e label
+        const showMonthFilter = isYearSelected;
+        mesSelect.style.display = showMonthFilter ? 'block' : 'none';
+        if (mesLabel && mesLabel.tagName === 'LABEL') {
+            mesLabel.style.display = showMonthFilter ? 'block' : 'none';
+        }
+
+        // Ativa/desativa o select de mês
+        mesSelect.disabled = !showMonthFilter;
+
+        // Mostra/oculta range de datas
+        dateContainer.style.display = isManual ? 'flex' : 'none';
+
+        // Inicializa datas padrão apenas na primeira exibição do modo manual
+        if (isManual && !dateContainer.dataset.initialized) {
+            const hoje = new Date();
+            const inicio = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+            document.getElementById('filtro-data-inicio').value = inicio.toISOString().split('T')[0];
+            document.getElementById('filtro-data-fim').value = hoje.toISOString().split('T')[0];
+            dateContainer.dataset.initialized = 'true';
+        }
+
+        updateRanking();
+    };
+
+    // Atualiza ranking ao mudar datas
+    document.getElementById('filtro-data-inicio').onchange = updateRanking;
+    document.getElementById('filtro-data-fim').onchange = updateRanking;
+
+    // Garante estado inicial correto ao carregar
+    anoSelect.dispatchEvent(new Event('change'));
 }
 
 function updateCursosNotaSelect() {
