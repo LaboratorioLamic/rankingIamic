@@ -1196,17 +1196,40 @@
             if (subTabName === 'cadastro-unidades') updateUnidadesList();
         }
 
-        function updateColaboradoresSelects() {
+function updateColaboradoresSelects() {
     const selects = [
         document.getElementById('colaborador-pontos'),
         document.getElementById('colaborador-conquista'),
         document.getElementById('colaborador-cursos'),
         document.getElementById('colaborador-nota')
     ];
-    // Ordenar colaboradores por nome
     const sortedColaboradores = [...colaboradores].sort((a, b) => a.nome.localeCompare(b.nome));
+
     selects.forEach(select => {
-        select.innerHTML = '<option value="">Selecione um colaborador</option>';
+        select.innerHTML = '';
+
+        if (select.id === 'colaborador-pontos') {
+            // Primeiro: placeholder
+            const optPlaceholder = document.createElement('option');
+            optPlaceholder.value = '';
+            optPlaceholder.textContent = 'Selecione um Colaborador';
+            optPlaceholder.disabled = true;
+            optPlaceholder.selected = true;
+            select.appendChild(optPlaceholder);
+
+            // Depois: SELECIONAR TODOS
+            const optTodos = document.createElement('option');
+            optTodos.value = 'todos';
+            optTodos.textContent = 'SELECIONAR TODOS';
+            select.appendChild(optTodos);
+        } else {
+            const optVazio = document.createElement('option');
+            optVazio.value = '';
+            optVazio.textContent = 'Selecione um colaborador';
+            select.appendChild(optVazio);
+        }
+
+        // Lista de colaboradores
         sortedColaboradores.forEach(col => {
             const option = document.createElement('option');
             option.value = col.id;
@@ -1215,7 +1238,7 @@
         });
     });
 
-    // Adicionar eventos onchange para atualizar históricos automaticamente
+    // Eventos onchange
     document.getElementById('colaborador-pontos').onchange = updateHistoricoPontos;
     document.getElementById('colaborador-conquista').onchange = updateHistoricoConquistas;
     document.getElementById('colaborador-cursos').onchange = updateHistoricoCursos;
@@ -1966,28 +1989,74 @@ async function init() {
         }
     });
 
-    document.getElementById('add-pontos-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const colId = parseInt(document.getElementById('colaborador-pontos').value);
-        const legenda = document.getElementById('legenda-pontos').value;
-        const pontos = parseInt(document.getElementById('pontos-add').value);
-        if (colId && legenda && !isNaN(pontos)) {
-            const col = colaboradores.find(c => c.id === colId);
-            if (col) {
-                col.pontos += pontos;
-                col.historico.push({
-                    tipo: 'pontos',
-                    valor: pontos,
-                    descricao: `${legenda}: ${pontos} pontos (${new Date().toLocaleDateString('pt-BR')})`,
-                    data: new Date().toLocaleDateString('pt-BR')
-                });
-                await saveData({ colaboradores, cargos: [...cargos], unidades: [...unidades] });
-                document.getElementById('add-pontos-form').reset();
-                updateHistoricoPontos();
-                updateRanking();
-            }
+document.getElementById('add-pontos-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const colaboradorSelect = document.getElementById('colaborador-pontos');
+    const colId = colaboradorSelect.value;
+    const legenda = document.getElementById('legenda-pontos').value.trim();
+    const pontosInput = document.getElementById('pontos-add').value;
+    const pontos = parseInt(pontosInput);
+
+    if (!legenda || isNaN(pontos)) {
+        alert('Preencha a legenda e um valor válido de pontos!');
+        return;
+    }
+
+    if (!colId || colId === '') {
+        alert('Selecione um colaborador ou "SELECIONAR TODOS"!');
+        return;
+    }
+
+    const dataAtual = new Date().toLocaleDateString('pt-BR');
+    const descricaoBase = `${legenda}: ${pontos > 0 ? '+' : ''}${pontos} pontos (${dataAtual})`;
+
+    if (colId === 'todos') {
+        // CONFIRMAÇÃO ANTES DE ENVIAR PARA TODOS
+        const totalColaboradores = colaboradores.length;
+        const confirma = confirm(
+            `Você está prestes a aplicar:\n\n` +
+            `"${legenda}"\n` +
+            `${pontos > 0 ? '+' : ''}${pontos} pontos\n\n` +
+            `Para TODOS os ${totalColaboradores} colaboradores.\n\n` +
+            `Deseja confirmar esta ação?`
+        );
+
+        if (!confirma) {
+            alert('Ação cancelada.');
+            return;
         }
-    });
+
+        // Aplica para todos
+        colaboradores.forEach(col => {
+            col.pontos += pontos;
+            col.historico.push({
+                tipo: 'pontos',
+                valor: pontos,
+                descricao: descricaoBase,
+                data: dataAtual
+            });
+        });
+
+        alert(`Pontos aplicados com sucesso a TODOS os ${totalColaboradores} colaboradores!`);
+    } else {
+        const col = colaboradores.find(c => c.id == colId);
+        if (col) {
+            col.pontos += pontos;
+            col.historico.push({
+                tipo: 'pontos',
+                valor: pontos,
+                descricao: descricaoBase,
+                data: dataAtual
+            });
+        }
+    }
+
+    await saveData({ colaboradores, cargos: [...cargos], unidades: [...unidades] });
+    document.getElementById('add-pontos-form').reset();
+    colaboradorSelect.selectedIndex = 0; // Volta para "Selecione um Colaborador"
+    updateHistoricoPontos();
+    updateRanking();
+});
 
     document.getElementById('add-conquista-form').addEventListener('submit', async (e) => {
         e.preventDefault();
