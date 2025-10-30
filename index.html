@@ -603,6 +603,7 @@
     align-items: center;
     gap: 10px;
     margin-bottom: 10px;
+    
 }
 .nota-container input[type="number"] {
     width: 200px;
@@ -648,6 +649,13 @@
         margin-right: 5px;
         font-size: 13px;
     }
+    .datahora {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    width: 50px;
+}
     </style>
 </head>
 <body>
@@ -778,6 +786,10 @@
                 <input type="number" id="pontos-add" placeholder="Pontos a adicionar (pode ser negativo)" required>
                 <button type="submit">Adicionar Pontos</button>
             </form>
+            <div class="datahora">
+                <input type="date" id="data-pontos">
+                <input type="time" id="hora-pontos">
+            </div>
             <div id="historico-pontos"></div>
         </div>
         
@@ -791,6 +803,10 @@
                 <input type="hidden" id="cor-conquista" value="#ffd700">
                 <button type="submit">Adicionar Conquista</button>
             </form>
+            <div class="datahora">
+                <input type="date" id="data-conquista">
+                <input type="time" id="hora-conquista">
+            </div>
             <div id="icons-selector" class="icons-selector"></div>
             <div id="colors-selector" class="colors-selector"></div>
             <div id="achievement-preview" class="achievement-preview"></div>
@@ -806,11 +822,16 @@
                     <input type="number" id="nota-curso" placeholder="Nota da Avaliação (0-10)" min="0" max="10" step="0.1">
                     <label style="margin-left: 20px;">Pontuar: <input type="checkbox" id="pontuar-curso" checked></label>
                 </div>
+                
                 <button type="button" onclick="toggleSelectorsCurso()">Selecionar Ícone</button>
                 <input type="hidden" id="icone-curso" required>
                 <input type="hidden" id="cor-curso" value="#ffd700">
                 <button type="submit">Adicionar Curso</button>
             </form>
+            <div class="datahora">
+                <input type="date" id="data-curso" onchange="updateCursoPreview()">
+                <input type="time" id="hora-curso" onchange="updateCursoPreview()">
+            </div>
             <div id="icons-selector-curso" class="icons-selector"></div>
             <div id="colors-selector-curso" class="colors-selector"></div>
             <div id="curso-preview" class="achievement-preview"></div>
@@ -827,6 +848,10 @@
                 </div>
                 <button type="submit">Adicionar Nota</button>
             </form>
+            <div class="datahora">
+                <input type="date" id="data-nota">
+                <input type="time" id="hora-nota">
+            </div>
             <div id="historico-notas"></div>
         </div>
     </div>
@@ -1073,13 +1098,13 @@
         }
 
         function toggleSelectorsCurso() {
-            const iconsSelector = document.getElementById('icons-selector-curso');
-            const colorsSelector = document.getElementById('colors-selector-curso');
-            const isVisible = iconsSelector.style.display === 'grid';
-            iconsSelector.style.display = isVisible ? 'none' : 'grid';
-            colorsSelector.style.display = isVisible ? 'none' : 'grid';
-            updateCursoPreview();
-        }
+    const iconsSelector = document.getElementById('icons-selector-curso');
+    const colorsSelector = document.getElementById('colors-selector-curso');
+    const isVisible = iconsSelector.style.display === 'grid';
+    iconsSelector.style.display = isVisible ? 'none' : 'grid';
+    colorsSelector.style.display = isVisible ? 'none' : 'grid';
+    updateCursoPreview();
+}
 
         function toggleSelectorsEditCurso() {
             const iconsSelector = document.getElementById('edit-icons-selector-curso');
@@ -1142,19 +1167,22 @@
         }
 
         function updateCursoPreview() {
-            const nome = document.getElementById('nome-curso').value || 'Nome do Curso';
-            const descricao = document.getElementById('desc-curso').value || 'Descrição do Curso';
-            const icone = document.getElementById('icone-curso').value || 'fas fa-trophy';
-            const cor = document.getElementById('cor-curso').value || '#ffd700';
-            const preview = document.getElementById('curso-preview');
-            preview.innerHTML = `
-                <h3>Prévia do Curso</h3>
-                <div class="achievement-preview-card" style="background: linear-gradient(to bottom, ${cor}, ${cor}); color: ${isDarkColor(cor) ? '#ffffff' : '#000000'}">
-                    <i class="${icone} achievement-icon"></i> ${nome}
-                    <span class="achievement-description">${descricao}</span>
-                </div>
-            `;
-        }
+    const nome = document.getElementById('nome-curso').value || 'Nome do Curso';
+    const descricao = document.getElementById('desc-curso').value || 'Descrição do Curso';
+    const icone = document.getElementById('icone-curso').value || 'fas fa-trophy';
+    const cor = document.getElementById('cor-curso').value || '#ffd700';
+    const data = document.getElementById('data-curso').value;
+    const hora = document.getElementById('hora-curso').value;
+    const dataFormatada = data ? new Date(`${data}T${hora || '00:00'}:00`).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : 'Agora';
+    const preview = document.getElementById('curso-preview');
+    preview.innerHTML = `
+        <h3>Prévia do Curso</h3>
+        <div class="achievement-preview-card" style="background: linear-gradient(to bottom, ${cor}, ${cor}); color: ${isDarkColor(cor) ? '#ffffff' : '#000000'}">
+            <i class="${icone} achievement-icon"></i> ${nome}
+            <span class="achievement-description">${descricao} • ${dataFormatada}</span>
+        </div>
+    `;
+}
 
         async function openTab(tabName) {
             if ((tabName === 'cadastro' || tabName === 'adicionar') && !isAuthenticated) {
@@ -1389,28 +1417,24 @@ function getFilteredColaboradores() {
     const filtroUnidade = document.getElementById('filtro-unidade').value;
     const filtroAno = document.getElementById('filtro-ano').value;
     const filtroMes = document.getElementById('filtro-mes').value;
-
     let filtered = colaboradores.filter(col => {
         let match = true;
         if (filtroCargo !== 'geral') match = match && col.cargos.includes(filtroCargo);
         if (filtroUnidade !== 'geral') match = match && col.unidade === filtroUnidade;
         return match;
     });
-
     filtered = filtered.map(col => {
-        const cloned = { 
-            ...col, 
-            pontos: 0, 
-            notas: [], 
-            historico: [], 
-            conquistas: [], 
+        const cloned = {
+            ...col,
+            pontos: 0,
+            notas: [],
+            historico: [],
+            conquistas: [],
             cursos: [],
-            ultimaConclusaoCurso: null  // para desempate: mais recente vem primeiro
+            ultimaConclusaoCurso: null // para desempate: mais antiga vem primeiro
         };
-
         col.historico.forEach(entry => {
             let incluir = false;
-
             if (filtroAno === 'todos') {
                 incluir = true;
             } else if (filtroAno === 'manual') {
@@ -1428,7 +1452,6 @@ function getFilteredColaboradores() {
                 const [dia, mes, ano] = entry.data.split('/').map(Number);
                 incluir = ano == filtroAno && (filtroMes === 'todos' || mes == filtroMes);
             }
-
             if (incluir) {
                 const entryCompleta = { ...entry };
                 if (!entry.timestamp) {
@@ -1436,9 +1459,7 @@ function getFilteredColaboradores() {
                     const [hora, minuto] = (entry.hora || '00:00').split(':').map(Number);
                     entryCompleta.timestamp = new Date(ano, mes - 1, dia, hora, minuto).getTime();
                 }
-
                 cloned.historico.push(entryCompleta);
-
                 if (entry.tipo === 'pontos') {
                     cloned.pontos += entry.valor;
                 }
@@ -1451,25 +1472,23 @@ function getFilteredColaboradores() {
                     const curso = col.cursos.find(c => c.nome === entry.valor);
                     if (curso) {
                         cloned.cursos.push(curso);
-                        // Atualiza a data da última conclusão de curso
-                        if (!cloned.ultimaConclusaoCurso || entryCompleta.timestamp > cloned.ultimaConclusaoCurso) {
+                        // Atualiza a data da última conclusão de curso (mais antiga)
+                        if (!cloned.ultimaConclusaoCurso || entryCompleta.timestamp < cloned.ultimaConclusaoCurso) {
                             cloned.ultimaConclusaoCurso = entryCompleta.timestamp;
                         }
                     }
                 }
             }
         });
-
         cloned.notaMedia = calculateNotaMedia(cloned.notas);
         return cloned;
     }).filter(col => col.historico.length > 0 || filtroAno === 'todos');
-
     return filtered.sort((a, b) => {
         if (b.pontos !== a.pontos) return b.pontos - a.pontos;
         if (b.notaMedia !== a.notaMedia) return b.notaMedia - a.notaMedia;
-        // Desempate: quem concluiu o último curso mais recentemente vem primeiro
+        // Desempate: quem concluiu o curso mais cedo vem primeiro (data mais antiga)
         if (a.ultimaConclusaoCurso && b.ultimaConclusaoCurso) {
-            return b.ultimaConclusaoCurso - a.ultimaConclusaoCurso; // mais recente primeiro
+            return a.ultimaConclusaoCurso - b.ultimaConclusaoCurso; // menor timestamp primeiro
         }
         if (a.ultimaConclusaoCurso) return -1;
         if (b.ultimaConclusaoCurso) return 1;
@@ -2215,19 +2234,24 @@ async function init() {
     const colId = colaboradorSelect.value;
     const legenda = document.getElementById('legenda-pontos').value.trim();
     const pontos = parseInt(document.getElementById('pontos-add').value);
+    const dataInput = document.getElementById('data-pontos').value;
+    const horaInput = document.getElementById('hora-pontos').value || '00:00';
 
     if (!legenda || isNaN(pontos)) {
         alert('Preencha a legenda e um valor válido de pontos!');
         return;
     }
-
     if (!colId || colId === '') {
         alert('Selecione um colaborador ou "SELECIONAR TODOS"!');
         return;
     }
+    if (!dataInput) {
+        alert('Selecione uma data para os pontos!');
+        return;
+    }
 
-    const dataAtual = new Date();
-    const descricaoBase = `${legenda}: ${pontos > 0 ? '+' : ''}${pontos} pontos (${dataAtual.toLocaleDateString('pt-BR')} ${dataAtual.toTimeString().slice(0,5)})`;
+    const dataHora = new Date(`${dataInput}T${horaInput}:00`);
+    const descricaoBase = `${legenda}: ${pontos > 0 ? '+' : ''}${pontos} pontos (${dataHora.toLocaleDateString('pt-BR')} ${dataHora.toTimeString().slice(0,5)})`;
 
     if (colId === 'todos') {
         const totalColaboradores = colaboradores.length;
@@ -2236,52 +2260,58 @@ async function init() {
 
         colaboradores.forEach(col => {
             col.pontos += pontos;
-            col.historico.push(criarEntradaHistorico('pontos', pontos, descricaoBase, dataAtual));
+            col.historico.push(criarEntradaHistorico('pontos', pontos, descricaoBase, dataHora));
         });
         alert(`Pontos aplicados a todos!`);
     } else {
         const col = colaboradores.find(c => c.id == colId);
         if (col) {
             col.pontos += pontos;
-            col.historico.push(criarEntradaHistorico('pontos', pontos, descricaoBase, dataAtual));
+            col.historico.push(criarEntradaHistorico('pontos', pontos, descricaoBase, dataHora));
         }
     }
 
     await saveData({ colaboradores, cargos: [...cargos], unidades: [...unidades] });
     document.getElementById('add-pontos-form').reset();
     colaboradorSelect.selectedIndex = 0;
+    const agora = new Date();
+    document.getElementById('data-pontos').value = agora.toISOString().split('T')[0];
+    document.getElementById('hora-pontos').value = agora.toTimeString().slice(0, 5);
     updateHistoricoPontos();
     updateRanking();
 });
 
-    document.getElementById('add-conquista-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const colId = parseInt(document.getElementById('colaborador-conquista').value);
-        const nome = document.getElementById('nome-conquista').value;
-        const descricao = document.getElementById('desc-conquista').value;
-        const icone = document.getElementById('icone-conquista').value;
-        const cor = document.getElementById('cor-conquista').value;
-        if (colId && nome && icone) {
-            const col = colaboradores.find(c => c.id === colId);
-            if (col) {
-                col.conquistas.push({ nome, icone, cor, descricao });
-                col.historico.push({
-                    tipo: 'conquista',
-                    valor: nome,
-                    descricao: `Conquista: "${nome}"`,
-                    data: new Date().toLocaleDateString('pt-BR')
-                });
-                await saveData({ colaboradores, cargos: [...cargos], unidades: [...unidades] });
-                document.getElementById('add-conquista-form').reset();
-                document.getElementById('icons-selector').style.display = 'none';
-                document.getElementById('colors-selector').style.display = 'none';
-                updateHistoricoConquistas();
-                updateAchievementPreview();
-            }
-        } else {
-            alert('Selecione um ícone!');
-        }
-    });
+document.getElementById('add-conquista-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const colId = parseInt(document.getElementById('colaborador-conquista').value);
+    const nome = document.getElementById('nome-conquista').value;
+    const descricao = document.getElementById('desc-conquista').value;
+    const icone = document.getElementById('icone-conquista').value;
+    const cor = document.getElementById('cor-conquista').value;
+    const dataInput = document.getElementById('data-conquista').value;
+    const horaInput = document.getElementById('hora-conquista').value || '00:00';
+
+    if (!colId || !nome || !icone || !dataInput) {
+        alert('Preencha todos os campos obrigatórios, incluindo data!');
+        return;
+    }
+
+    const dataHora = new Date(`${dataInput}T${horaInput}:00`);
+    const col = colaboradores.find(c => c.id === colId);
+    if (col) {
+        col.conquistas.push({ nome, icone, cor, descricao });
+        col.historico.push(criarEntradaHistorico('conquista', nome, `Conquista: "${nome}"`, dataHora));
+        await saveData({ colaboradores, cargos: [...cargos], unidades: [...unidades] });
+        document.getElementById('add-conquista-form').reset();
+        document.getElementById('icons-selector').style.display = 'none';
+        document.getElementById('colors-selector').style.display = 'none';
+        const agora = new Date();
+        document.getElementById('data-conquista').value = agora.toISOString().split('T')[0];
+        document.getElementById('hora-conquista').value = agora.toTimeString().slice(0, 5);
+        updateHistoricoConquistas();
+        updateAchievementPreview();
+    }
+});
 
     document.getElementById('add-cursos-form').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -2293,62 +2323,53 @@ async function init() {
     const pontuar = document.getElementById('pontuar-curso').checked;
     const icone = document.getElementById('icone-curso').value;
     const cor = document.getElementById('cor-curso').value;
-
+    const dataInput = document.getElementById('data-curso').value;
+    const horaInput = document.getElementById('hora-curso').value;
+    
     if (!colId || !nome || !icone) {
         alert('Preencha todos os campos obrigatórios e selecione um ícone!');
         return;
     }
-
-    // Validação da nota: se preenchida, deve estar entre 0 e 10
     if (notaValor !== null && (isNaN(notaValor) || notaValor < 0 || notaValor > 10)) {
         alert('A nota deve estar entre 0 e 10!');
         return;
     }
+    if (!dataInput) {
+        alert('Selecione uma data para o curso!');
+        return;
+    }
 
+    const dataHora = new Date(`${dataInput}T${horaInput || '00:00'}:00`);
     const col = colaboradores.find(c => c.id === colId);
     if (!col) return;
 
-    // Adiciona o curso
+    // Adiciona o curso com data/hora
     col.cursos.push({ nome, icone, cor, descricao });
-    col.historico.push({
-        tipo: 'curso',
-        valor: nome,
-        descricao: `Curso: "${nome}"`,
-        data: new Date().toLocaleDateString('pt-BR')
-    });
+    col.historico.push(criarEntradaHistorico('curso', nome, `Curso: "${nome}"`, dataHora));
 
     // Se houver nota válida
     if (notaValor !== null) {
         col.notas.push(notaValor);
-        col.historico.push({
-            tipo: 'nota',
-            valor: notaValor,
-            descricao: `Nota ${notaValor} no curso: "${nome}"`,
-            data: new Date().toLocaleDateString('pt-BR')
-        });
-
-        // Só pontua se a nota estiver preenchida e o checkbox estiver marcado
+        col.historico.push(criarEntradaHistorico('nota', notaValor, `Nota ${notaValor} no curso: "${nome}"`, dataHora));
         if (pontuar) {
             const pontos = notaValor * 10;
             col.pontos += pontos;
-            col.historico.push({
-                tipo: 'pontos',
-                valor: pontos,
-                descricao: `Ganhou ${pontos} pontos pela nota ${notaValor} no curso: "${nome}"`,
-                data: new Date().toLocaleDateString('pt-BR')
-            });
+            col.historico.push(criarEntradaHistorico('pontos', pontos, `Ganhou ${pontos} pontos pela nota ${notaValor} no curso: "${nome}"`, dataHora));
         }
     }
-    // Se nota estiver em branco: NÃO adiciona nota nem pontos, mesmo com checkbox marcado
 
     await saveData({ colaboradores, cargos: [...cargos], unidades: [...unidades] });
-    
+
     // Reset do formulário
     document.getElementById('add-cursos-form').reset();
     document.getElementById('pontuar-curso').checked = true;
+    // Define data/hora padrão como "agora"
+    const agora = new Date();
+    document.getElementById('data-curso').value = agora.toISOString().split('T')[0];
+    document.getElementById('hora-curso').value = agora.toTimeString().slice(0, 5);
     document.getElementById('icons-selector-curso').style.display = 'none';
     document.getElementById('colors-selector-curso').style.display = 'none';
-    
+
     updateHistoricoCursos();
     updateCursoPreview();
     updateRanking();
@@ -2360,36 +2381,32 @@ document.getElementById('add-nota-form').addEventListener('submit', async (e) =>
     const curso = document.getElementById('curso-nota').value.trim();
     const nota = parseFloat(document.getElementById('nota-add').value);
     const pontuar = document.getElementById('pontuar-nota').checked;
-    if (colId && curso && !isNaN(nota) && nota >= 0 && nota <= 10) {
-        const col = colaboradores.find(c => c.id === colId);
-        if (col) {
-            // Adicionar a nota ao histórico
-            col.notas.push(nota);
-            col.historico.push({
-                tipo: 'nota',
-                valor: nota,
-                descricao: `Nota ${nota} no curso "${curso}" em ${new Date().toLocaleDateString('pt-BR')}`,
-                data: new Date().toLocaleDateString('pt-BR')
-            });
-            // Adicionar pontos se o checkbox estiver marcado
-            if (pontuar) {
-                const pontos = nota * 10;
-                col.pontos += pontos;
-                col.historico.push({
-                    tipo: 'pontos',
-                    valor: pontos,
-                    descricao: `Ganhou ${pontos} pontos pela nota ${nota} no curso "${curso}" em ${new Date().toLocaleDateString('pt-BR')}`,
-                    data: new Date().toLocaleDateString('pt-BR')
-                });
-            }
-            await saveData({ colaboradores, cargos: [...cargos], unidades: [...unidades] });
-            document.getElementById('add-nota-form').reset();
-            document.getElementById('pontuar-nota').checked = true; // Restaurar checkbox como marcado
-            updateHistoricoNotas();
-            updateRanking();
+    const dataInput = document.getElementById('data-nota').value;
+    const horaInput = document.getElementById('hora-nota').value || '00:00';
+
+    if (!colId || !curso || isNaN(nota) || nota < 0 || nota > 10 || !dataInput) {
+        alert('Preencha todos os campos corretamente, incluindo data!');
+        return;
+    }
+
+    const dataHora = new Date(`${dataInput}T${horaInput}:00`);
+    const col = colaboradores.find(c => c.id === colId);
+    if (col) {
+        col.notas.push(nota);
+        col.historico.push(criarEntradaHistorico('nota', nota, `Nota ${nota} no curso "${curso}"`, dataHora));
+        if (pontuar) {
+            const pontos = nota * 10;
+            col.pontos += pontos;
+            col.historico.push(criarEntradaHistorico('pontos', pontos, `Ganhou ${pontos} pontos pela nota ${nota} no curso "${curso}"`, dataHora));
         }
-    } else {
-        alert('Preencha todos os campos corretamente!');
+        await saveData({ colaboradores, cargos: [...cargos], unidades: [...unidades] });
+        document.getElementById('add-nota-form').reset();
+        document.getElementById('pontuar-nota').checked = true;
+        const agora = new Date();
+        document.getElementById('data-nota').value = agora.toISOString().split('T')[0];
+        document.getElementById('hora-nota').value = agora.toTimeString().slice(0, 5);
+        updateHistoricoNotas();
+        updateRanking();
     }
 });
 
@@ -2811,6 +2828,22 @@ function criarEntradaHistorico(tipo, valor, descricao, data = null) {
         timestamp: dataHora.getTime()  // Para ordenação precisa
     };
 }
+
+const agoraInit = new Date();
+['data-pontos', 'data-conquista', 'data-nota'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+        el.value = agoraInit.toISOString().split('T')[0];
+    }
+});
+['hora-pontos', 'hora-conquista', 'hora-nota'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+        el.value = agoraInit.toTimeString().slice(0, 5);
+    }
+});
+document.getElementById('data-curso').value = agoraInit.toISOString().split('T')[0];
+document.getElementById('hora-curso').value = agoraInit.toTimeString().slice(0, 5);
 
     init();
     </script>
