@@ -1398,8 +1398,16 @@ function getFilteredColaboradores() {
     });
 
     filtered = filtered.map(col => {
-        const cloned = { ...col, pontos: 0, notas: [], historico: [], conquistas: [], cursos: [] };
-        
+        const cloned = { 
+            ...col, 
+            pontos: 0, 
+            notas: [], 
+            historico: [], 
+            conquistas: [], 
+            cursos: [],
+            ultimaPontuacao: null  // Para desempate
+        };
+
         col.historico.forEach(entry => {
             let incluir = false;
 
@@ -1422,8 +1430,23 @@ function getFilteredColaboradores() {
             }
 
             if (incluir) {
-                cloned.historico.push(entry);
-                if (entry.tipo === 'pontos') cloned.pontos += entry.valor;
+                const entryCompleta = { ...entry };
+                // Reconstruir timestamp se não existir (compatibilidade)
+                if (!entry.timestamp) {
+                    const [dia, mes, ano] = entry.data.split('/').map(Number);
+                    const [hora, minuto] = (entry.hora || '00:00').split(':').map(Number);
+                    entryCompleta.timestamp = new Date(ano, mes - 1, dia, hora, minuto).getTime();
+                }
+
+                cloned.historico.push(entryCompleta);
+
+                if (entry.tipo === 'pontos') {
+                    cloned.pontos += entry.valor;
+                    // Atualiza última pontuação
+                    if (!cloned.ultimaPontuacao || entryCompleta.timestamp < cloned.ultimaPontuacao) {
+                        cloned.ultimaPontuacao = entryCompleta.timestamp;
+                    }
+                }
                 if (entry.tipo === 'nota') cloned.notas.push(entry.valor);
                 if (entry.tipo === 'conquista') {
                     const conq = col.conquistas.find(c => c.nome === entry.valor);
@@ -1442,7 +1465,14 @@ function getFilteredColaboradores() {
 
     return filtered.sort((a, b) => {
         if (b.pontos !== a.pontos) return b.pontos - a.pontos;
-        return b.notaMedia - a.notaMedia;
+        if (b.notaMedia !== a.notaMedia) return b.notaMedia - a.notaMedia;
+        // Desempate: quem pontuou mais antigamente vem primeiro
+        if (a.ultimaPontuacao && b.ultimaPontuacao) {
+            return a.ultimaPontuacao - b.ultimaPontuacao;
+        }
+        if (a.ultimaPontuacao) return -1;
+        if (b.ultimaPontuacao) return 1;
+        return 0;
     });
 }
 
@@ -1452,44 +1482,38 @@ function updateRanking() {
     const restDiv = document.getElementById('rest-ranking');
     top3Div.innerHTML = '';
     restDiv.innerHTML = '';
+
     filtered.forEach((col, index) => {
         const card = document.createElement('div');
         card.classList.add('card');
-        let trophyColor = '';
-        let trophyIcon = '';
-        if (index === 0) {
-            card.classList.add('rank-1');
-            trophyColor = 'gold';
-            trophyIcon = '<i class="fas fa-trophy trophy" style="color: gold;"></i>';
-        } else if (index === 1) {
-            card.classList.add('rank-2');
-            trophyColor = 'silver';
-            trophyIcon = '<i class="fas fa-trophy trophy" style="color: silver;"></i>';
-        } else if (index === 2) {
-            card.classList.add('rank-3');
-            trophyColor = '#cd7f32';
-            trophyIcon = '<i class="fas fa-trophy trophy" style="color: #cd7f32;"></i>';
-        }
-        // Construir os ícones das conquistas
+        let trophyColor = '', trophyIcon = '';
+        if (index === 0) { card.classList.add('rank-1'); trophyColor = 'gold'; trophyIcon = '<i class="fas fa-trophy trophy" style="color: gold;"></i>'; }
+        else if (index === 1) { card.classList.add('rank-2'); trophyColor = 'silver'; trophyIcon = '<i class="fas fa-trophy trophy" style="color: silver;"></i>'; }
+        else if (index === 2) { card.classList.add('rank-3'); trophyColor = '#cd7f32'; trophyIcon = '<i class="fas fa-trophy trophy" style="color: #cd7f32;"></i>'; }
+
         let conquistasHTML = '<div class="achievements-ranking">';
         col.conquistas.forEach(conq => {
-            conquistasHTML += `
-                <div class="achievement-icon-ranking">
-                    <i class="${conq.icone}" style="color: ${conq.cor};"></i>
-                    <span class="achievement-description">${conq.descricao || conq.nome}</span>
-                </div>`;
+            conquistasHTML += `<div class="achievement-icon-ranking">
+                <i class="${conq.icone}" style="color: ${conq.cor};"></i>
+                <span class="achievement-description">${conq.descricao || conq.nome}</span>
+            </div>`;
         });
         conquistasHTML += '</div>';
-        // Construir os ícones dos cursos
+
         let cursosHTML = '<div class="cursos-ranking">';
         col.cursos.forEach(curso => {
-            cursosHTML += `
-                <div class="curso-icon-ranking">
-                    <i class="${curso.icone}" style="color: ${curso.cor};"></i>
-                    <span class="curso-description">${curso.descricao || curso.nome}</span>
-                </div>`;
+            cursosHTML += `<div class="curso-icon-ranking">
+                <i class="${curso.icone}" style="color: ${curso.cor};"></i>
+                <span class="curso-description">${curso.descricao || curso.nome}</span>
+            </div>`;
         });
         cursosHTML += '</div>';
+
+        // Última pontuação formatada
+        const ultimaData = col.ultimaPontuacao 
+            ? new Date(col.ultimaPontuacao).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
+            : 'Nenhuma';
+
         card.innerHTML = `
             <div class="card-content">
                 <div class="avatar">${col.nome.charAt(0)}</div>
@@ -1499,53 +1523,54 @@ function updateRanking() {
                     <div class="nota-media">Nota Média: ${col.notaMedia.toFixed(2)}</div>
                     <div><span class="ranking-item-label">Conquistas:</span>${conquistasHTML}</div>
                     <div><span class="ranking-item-label">Cursos:</span>${cursosHTML}</div>
+                    <div><small>Última pontuação: ${ultimaData}</small></div>
                 </div>
             </div>
         `;
         card.onclick = () => openModal(col);
-        if (index < 3) {
-            top3Div.appendChild(card);
-        } else {
-            restDiv.appendChild(card);
-        }
+        if (index < 3) top3Div.appendChild(card);
+        else restDiv.appendChild(card);
     });
 }
 
-        function openModal(col) {
-            document.getElementById('modal-name').textContent = col.nome;
-            document.getElementById('modal-points').textContent = `Pontos: ${col.pontos}`;
-            document.getElementById('modal-nota-media').textContent = `Nota Média: ${calculateNotaMedia(col.notas)}`;
-            document.getElementById('modal-info').textContent = `Cargos: ${col.cargos.join(', ')} | Unidade: ${col.unidade}`;
-            const achievements = document.getElementById('modal-achievements');
-            achievements.innerHTML = '';
-            col.conquistas.forEach(conq => {
-                const div = document.createElement('div');
-                div.classList.add('achievement-card');
-                div.style.background = `linear-gradient(to bottom, ${conq.cor}, ${conq.cor})`;
-                div.style.color = isDarkColor(conq.cor) ? '#ffffff' : '#000000';
-                div.innerHTML = `<i class="${conq.icone} achievement-icon"></i> ${conq.nome}<span class="achievement-description">${conq.descricao || ''}</span>`;
-                achievements.appendChild(div);
-            });
-            const cursosDiv = document.getElementById('modal-cursos');
-            cursosDiv.innerHTML = '';
-            col.cursos.forEach(curso => {
-                const div = document.createElement('div');
-                div.classList.add('achievement-card');
-                div.style.background = `linear-gradient(to bottom, ${curso.cor}, ${curso.cor})`;
-                div.style.color = isDarkColor(curso.cor) ? '#ffffff' : '#000000';
-                div.innerHTML = `<i class="${curso.icone} achievement-icon"></i> ${curso.nome}<span class="achievement-description">${curso.descricao || ''}</span>`;
-                cursosDiv.appendChild(div);
-            });
-            const history = document.getElementById('modal-history');
-            history.innerHTML = '';
-            col.historico.slice(0, 10).reverse().forEach(entry => {
-                const li = document.createElement('li');
-                li.textContent = entry.descricao;
-                history.appendChild(li);
-            });
-            document.getElementById('modal').style.display = 'block';
-        }
+function openModal(col) {
+    document.getElementById('modal-name').textContent = col.nome;
+    document.getElementById('modal-points').textContent = `Pontos: ${col.pontos}`;
+    document.getElementById('modal-nota-media').textContent = `Nota Média: ${calculateNotaMedia(col.notas)}`;
+    document.getElementById('modal-info').textContent = `Cargos: ${col.cargos.join(', ')} | Unidade: ${col.unidade}`;
 
+    const achievements = document.getElementById('modal-achievements');
+    achievements.innerHTML = '';
+    col.conquistas.forEach(conq => {
+        const div = document.createElement('div');
+        div.classList.add('achievement-card');
+        div.style.background = `linear-gradient(to bottom, ${conq.cor}, ${conq.cor})`;
+        div.style.color = isDarkColor(conq.cor) ? '#ffffff' : '#000000';
+        div.innerHTML = `<i class="${conq.icone} achievement-icon"></i> ${conq.nome}<span class="achievement-description">${conq.descricao || ''}</span>`;
+        achievements.appendChild(div);
+    });
+
+    const cursosDiv = document.getElementById('modal-cursos');
+    cursosDiv.innerHTML = '';
+    col.cursos.forEach(curso => {
+        const div = document.createElement('div');
+        div.classList.add('achievement-card');
+        div.style.background = `linear-gradient(to bottom, ${curso.cor}, ${curso.cor})`;
+        div.style.color = isDarkColor(curso.cor) ? '#ffffff' : '#000000';
+        div.innerHTML = `<i class="${curso.icone} achievement-icon"></i> ${curso.nome}<span class="achievement-description">${curso.descricao || ''}</span>`;
+        cursosDiv.appendChild(div);
+    });
+
+    const history = document.getElementById('modal-history');
+    history.innerHTML = '';
+    col.historico.slice(0, 10).reverse().forEach(entry => {
+        const li = document.createElement('li');
+        li.innerHTML = `<strong>${entry.data} ${entry.hora}</strong> – ${entry.descricao}`;
+        history.appendChild(li);
+    });
+
+    document.getElementById('modal').style.display = 'block';
+}
         function closeModal() {
             document.getElementById('modal').style.display = 'none';
         }
@@ -1645,71 +1670,174 @@ function updateRanking() {
         }
 
         function openEditConquistaModal(colId, idx) {
-            const col = colaboradores.find(c => c.id === colId);
-            if (col) {
-                const conq = col.conquistas[idx];
-                document.getElementById('edit-conquista-col-id').value = colId;
-                document.getElementById('edit-conquista-idx').value = idx;
-                document.getElementById('edit-conquista-nome').value = conq.nome;
-                document.getElementById('edit-conquista-desc').value = conq.descricao;
-                document.getElementById('edit-conquista-icone').value = conq.icone;
-                document.getElementById('edit-conquista-cor').value = conq.cor;
-                initColorsSelector('edit-colors-selector', 'edit-conquista-cor');
-                initIconsSelector('edit-icons-selector', 'edit-conquista-icone');
-                document.querySelectorAll('#edit-icons-selector .icon-button').forEach(btn => {
-                    if (btn.innerHTML.includes(conq.icone)) btn.classList.add('selected');
-                });
-                document.querySelectorAll('#edit-colors-selector .color-button').forEach(btn => {
-                    if (btn.style.backgroundColor === conq.cor) btn.classList.add('selected');
-                });
-                document.getElementById('edit-conquista-modal').style.display = 'block';
-            }
-        }
+    const col = colaboradores.find(c => c.id === colId);
+    if (!col) return;
 
-        function closeEditConquistaModal() {
-            document.getElementById('edit-conquista-modal').style.display = 'none';
-            document.getElementById('edit-icons-selector').style.display = 'none';
-            document.getElementById('edit-colors-selector').style.display = 'none';
-            updateHistoricoConquistas();
-        }
+    const conq = col.conquistas[idx];
+    const historicoEntry = col.historico.find(e => e.tipo === 'conquista' && e.valor === conq.nome);
 
+    document.getElementById('edit-conquista-col-id').value = colId;
+    document.getElementById('edit-conquista-idx').value = idx;
+    document.getElementById('edit-conquista-nome').value = conq.nome;
+    document.getElementById('edit-conquista-desc').value = conq.descricao;
+    document.getElementById('edit-conquista-icone').value = conq.icone;
+    document.getElementById('edit-conquista-cor').value = conq.cor;
+
+    // Limpa campos anteriores de data/hora
+    const form = document.getElementById('edit-conquista-form');
+    const oldData = form.querySelector('#edit-conquista-data');
+    const oldHora = form.querySelector('#edit-conquista-hora');
+    if (oldData) oldData.remove();
+    if (oldHora) oldHora.remove();
+
+    // Cria campos de data e hora
+    const dataInput = document.createElement('input');
+    dataInput.type = 'date';
+    dataInput.id = 'edit-conquista-data';
+    dataInput.required = true;
+
+    const horaInput = document.createElement('input');
+    horaInput.type = 'time';
+    horaInput.id = 'edit-conquista-hora';
+    horaInput.required = true;
+
+    // Preenche com data/hora do histórico ou atual
+    if (historicoEntry) {
+        const [dia, mes, ano] = historicoEntry.data.split('/').map(Number);
+        dataInput.value = `${ano}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+        horaInput.value = historicoEntry.hora || '00:00';
+    } else {
+        const hoje = new Date();
+        dataInput.value = hoje.toISOString().split('T')[0];
+        horaInput.value = hoje.toTimeString().slice(0, 5);
+    }
+
+    // Insere após o botão de ícone
+    const iconButton = form.querySelector('button[onclick="toggleSelectorsEdit()"]');
+    iconButton.parentNode.insertBefore(dataInput, iconButton.nextSibling);
+    iconButton.parentNode.insertBefore(horaInput, iconButton.nextSibling.nextSibling);
+
+    // Inicializa seletores
+    initIconsSelector('edit-icons-selector', 'edit-conquista-icone');
+    initColorsSelector('edit-colors-selector', 'edit-conquista-cor');
+    document.querySelectorAll('#edit-icons-selector .icon-button').forEach(btn => {
+        if (btn.innerHTML.includes(conq.icone)) btn.classList.add('selected');
+    });
+    document.querySelectorAll('#edit-colors-selector .color-button').forEach(btn => {
+        if (btn.style.backgroundColor === conq.cor) btn.classList.add('selected');
+    });
+
+    document.getElementById('edit-conquista-modal').style.display = 'block';
+}
+
+function closeEditConquistaModal() {
+    document.getElementById('edit-conquista-modal').style.display = 'none';
+    document.getElementById('edit-icons-selector').style.display = 'none';
+    document.getElementById('edit-colors-selector').style.display = 'none';
+    const dataInput = document.getElementById('edit-conquista-data');
+    const horaInput = document.getElementById('edit-conquista-hora');
+    if (dataInput) dataInput.remove();
+    if (horaInput) horaInput.remove();
+    updateHistoricoConquistas();
+}
         function openEditCursoModal(colId, idx) {
-            const col = colaboradores.find(c => c.id === colId);
-            if (col) {
-                const curso = col.cursos[idx];
-                document.getElementById('edit-curso-col-id').value = colId;
-                document.getElementById('edit-curso-idx').value = idx;
-                document.getElementById('edit-curso-nome').value = curso.nome;
-                document.getElementById('edit-curso-desc').value = curso.descricao;
-                document.getElementById('edit-curso-icone').value = curso.icone;
-                document.getElementById('edit-curso-cor').value = curso.cor;
-                initColorsSelector('edit-colors-selector-curso', 'edit-curso-cor');
-                initIconsSelector('edit-icons-selector-curso', 'edit-curso-icone');
-                document.querySelectorAll('#edit-icons-selector-curso .icon-button').forEach(btn => {
-                    if (btn.innerHTML.includes(curso.icone)) btn.classList.add('selected');
-                });
-                document.querySelectorAll('#edit-colors-selector-curso .color-button').forEach(btn => {
-                    if (btn.style.backgroundColor === curso.cor) btn.classList.add('selected');
-                });
-                document.getElementById('edit-curso-modal').style.display = 'block';
-            }
-        }
+    const col = colaboradores.find(c => c.id === colId);
+    if (!col) return;
 
-        function closeEditCursoModal() {
-            document.getElementById('edit-curso-modal').style.display = 'none';
-            document.getElementById('edit-icons-selector-curso').style.display = 'none';
-            document.getElementById('edit-colors-selector-curso').style.display = 'none';
-            updateHistoricoCursos();
-        }
+    const curso = col.cursos[idx];
+    const historicoEntry = col.historico.find(e => e.tipo === 'curso' && e.valor === curso.nome);
 
-        function openEditHistoricoModal(colId, idx, tipo, descricao, valor) {
-            document.getElementById('edit-historico-col-id').value = colId;
-            document.getElementById('edit-historico-idx').value = idx;
-            document.getElementById('edit-historico-tipo').value = tipo;
-            document.getElementById('edit-historico-descricao').value = descricao;
-            document.getElementById('edit-historico-valor').value = valor;
-            document.getElementById('edit-historico-modal').style.display = 'block';
-        }
+    document.getElementById('edit-curso-col-id').value = colId;
+    document.getElementById('edit-curso-idx').value = idx;
+    document.getElementById('edit-curso-nome').value = curso.nome;
+    document.getElementById('edit-curso-desc').value = curso.descricao;
+    document.getElementById('edit-curso-icone').value = curso.icone;
+    document.getElementById('edit-curso-cor').value = curso.cor;
+
+    // Limpa campos anteriores
+    const form = document.getElementById('edit-curso-form');
+    const oldData = form.querySelector('#edit-curso-data');
+    const oldHora = form.querySelector('#edit-curso-hora');
+    if (oldData) oldData.remove();
+    if (oldHora) oldHora.remove();
+
+    // Cria campos
+    const dataInput = document.createElement('input');
+    dataInput.type = 'date';
+    dataInput.id = 'edit-curso-data';
+    dataInput.required = true;
+
+    const horaInput = document.createElement('input');
+    horaInput.type = 'time';
+    horaInput.id = 'edit-curso-hora';
+    horaInput.required = true;
+
+    // Preenche com data/hora
+    if (historicoEntry) {
+        const [dia, mes, ano] = historicoEntry.data.split('/').map(Number);
+        dataInput.value = `${ano}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+        horaInput.value = historicoEntry.hora || '00:00';
+    } else {
+        const hoje = new Date();
+        dataInput.value = hoje.toISOString().split('T')[0];
+        horaInput.value = hoje.toTimeString().slice(0, 5);
+    }
+
+    const iconButton = form.querySelector('button[onclick="toggleSelectorsEditCurso()"]');
+    iconButton.parentNode.insertBefore(dataInput, iconButton.nextSibling);
+    iconButton.parentNode.insertBefore(horaInput, iconButton.nextSibling.nextSibling);
+
+    initIconsSelector('edit-icons-selector-curso', 'edit-curso-icone');
+    initColorsSelector('edit-colors-selector-curso', 'edit-curso-cor');
+    document.querySelectorAll('#edit-icons-selector-curso .icon-button').forEach(btn => {
+        if (btn.innerHTML.includes(curso.icone)) btn.classList.add('selected');
+    });
+    document.querySelectorAll('#edit-colors-selector-curso .color-button').forEach(btn => {
+        if (btn.style.backgroundColor === curso.cor) btn.classList.add('selected');
+    });
+
+    document.getElementById('edit-curso-modal').style.display = 'block';
+}
+
+function closeEditCursoModal() {
+    document.getElementById('edit-curso-modal').style.display = 'none';
+    document.getElementById('edit-icons-selector-curso').style.display = 'none';
+    document.getElementById('edit-colors-selector-curso').style.display = 'none';
+    const dataInput = document.getElementById('edit-curso-data');
+    const horaInput = document.getElementById('edit-curso-hora');
+    if (dataInput) dataInput.remove();
+    if (horaInput) horaInput.remove();
+    updateHistoricoCursos();
+}
+        function openEditHistoricoModal(colId, idx, tipo, descricao, valor, data = null, hora = null) {
+    document.getElementById('edit-historico-col-id').value = colId;
+    document.getElementById('edit-historico-idx').value = idx;
+    document.getElementById('edit-historico-tipo').value = tipo;
+    document.getElementById('edit-historico-descricao').value = descricao;
+    document.getElementById('edit-historico-valor').value = valor;
+
+    // Campos de data e hora
+    const dataInput = document.createElement('input');
+    dataInput.type = 'date';
+    dataInput.id = 'edit-historico-data';
+    dataInput.value = data || new Date().toISOString().split('T')[0];
+
+    const horaInput = document.createElement('input');
+    horaInput.type = 'time';
+    horaInput.id = 'edit-historico-hora';
+    horaInput.value = hora || new Date().toTimeString().slice(0,5);
+
+    const form = document.getElementById('edit-historico-form');
+    const oldData = form.querySelector('#edit-historico-data');
+    const oldHora = form.querySelector('#edit-historico-hora');
+    if (oldData) oldData.remove();
+    if (oldHora) oldHora.remove();
+
+    form.insertBefore(dataInput, form.querySelector('button'));
+    form.insertBefore(horaInput, form.querySelector('button'));
+
+    document.getElementById('edit-historico-modal').style.display = 'block';
+}
 
         function closeEditHistoricoModal() {
             document.getElementById('edit-historico-modal').style.display = 'none';
@@ -1756,74 +1884,124 @@ function updateRanking() {
         }
 
         function editConquista() {
-            const colId = parseInt(document.getElementById('edit-conquista-col-id').value);
-            const idx = parseInt(document.getElementById('edit-conquista-idx').value);
-            const nome = document.getElementById('edit-conquista-nome').value;
-            const descricao = document.getElementById('edit-conquista-desc').value;
-            const icone = document.getElementById('edit-conquista-icone').value;
-            const cor = document.getElementById('edit-conquista-cor').value;
-            const col = colaboradores.find(c => c.id === colId);
-            if (col && icone) {
-                const oldNome = col.conquistas[idx].nome;
-                col.conquistas[idx] = { nome, icone, cor, descricao };
-                col.historico.forEach(entry => {
-                    if (entry.tipo === 'conquista' && entry.valor === oldNome) {
-                        entry.valor = nome;
-                        entry.descricao = `Conquista "${nome}" adicionada em ${entry.data}`;
-                    }
-                });
-                saveData({ colaboradores, cargos: [...cargos], unidades: [...unidades] });
-                closeEditConquistaModal();
-            } else {
-                alert('Selecione um ícone!');
-            }
-        }
+    const colId = parseInt(document.getElementById('edit-conquista-col-id').value);
+    const idx = parseInt(document.getElementById('edit-conquista-idx').value);
+    const nome = document.getElementById('edit-conquista-nome').value.trim();
+    const descricao = document.getElementById('edit-conquista-desc').value.trim();
+    const icone = document.getElementById('edit-conquista-icone').value;
+    const cor = document.getElementById('edit-conquista-cor').value;
+    const dataInput = document.getElementById('edit-conquista-data').value;
+    const horaInput = document.getElementById('edit-conquista-hora').value;
 
-        function editCurso() {
-            const colId = parseInt(document.getElementById('edit-curso-col-id').value);
-            const idx = parseInt(document.getElementById('edit-curso-idx').value);
-            const nome = document.getElementById('edit-curso-nome').value;
-            const descricao = document.getElementById('edit-curso-desc').value;
-            const icone = document.getElementById('edit-curso-icone').value;
-            const cor = document.getElementById('edit-curso-cor').value;
-            const col = colaboradores.find(c => c.id === colId);
-            if (col && icone) {
-                const oldNome = col.cursos[idx].nome;
-                col.cursos[idx] = { nome, icone, cor, descricao };
-                col.historico.forEach(entry => {
-                    if (entry.tipo === 'curso' && entry.valor === oldNome) {
-                        entry.valor = nome;
-                        entry.descricao = `Curso "${nome}" adicionado em ${entry.data}`;
-                    }
-                });
-                saveData({ colaboradores, cargos: [...cargos], unidades: [...unidades] });
-                closeEditCursoModal();
-            } else {
-                alert('Selecione um ícone!');
-            }
-        }
+    if (!colId || !nome || !icone || !dataInput || !horaInput) {
+        alert('Preencha todos os campos, incluindo data e hora!');
+        return;
+    }
+
+    const col = colaboradores.find(c => c.id === colId);
+    if (!col) return;
+
+    const oldNome = col.conquistas[idx].nome;
+    const novaDataHora = new Date(`${dataInput}T${horaInput}:00`);
+
+    // Atualiza conquista
+    col.conquistas[idx] = { nome, icone, cor, descricao };
+
+    // Atualiza entrada no histórico
+    const historicoEntry = col.historico.find(e => e.tipo === 'conquista' && e.valor === oldNome);
+    if (historicoEntry) {
+        historicoEntry.valor = nome;
+        historicoEntry.descricao = `Conquista "${nome}" adicionada em ${novaDataHora.toLocaleDateString('pt-BR')} ${novaDataHora.toTimeString().slice(0,5)}`;
+        historicoEntry.data = novaDataHora.toLocaleDateString('pt-BR');
+        historicoEntry.hora = novaDataHora.toTimeString().slice(0,5);
+        historicoEntry.timestamp = novaDataHora.getTime();
+    }
+
+    saveData({ colaboradores, cargos: [...cargos], unidades: [...unidades] });
+    closeEditConquistaModal();
+    openEditModal(colId); // Recarrega edição completa
+}
+
+function editCurso() {
+    const colId = parseInt(document.getElementById('edit-curso-col-id').value);
+    const idx = parseInt(document.getElementById('edit-curso-idx').value);
+    const nome = document.getElementById('edit-curso-nome').value.trim();
+    const descricao = document.getElementById('edit-curso-desc').value.trim();
+    const icone = document.getElementById('edit-curso-icone').value;
+    const cor = document.getElementById('edit-curso-cor').value;
+    const dataInput = document.getElementById('edit-curso-data').value;
+    const horaInput = document.getElementById('edit-curso-hora').value;
+
+    if (!colId || !nome || !icone || !dataInput || !horaInput) {
+        alert('Preencha todos os campos, incluindo data e hora!');
+        return;
+    }
+
+    const col = colaboradores.find(c => c.id === colId);
+    if (!col) return;
+
+    const oldNome = col.cursos[idx].nome;
+    const novaDataHora = new Date(`${dataInput}T${horaInput}:00`);
+
+    // Atualiza curso
+    col.cursos[idx] = { nome, icone, cor, descricao };
+
+    // Atualiza histórico
+    const historicoEntry = col.historico.find(e => e.tipo === 'curso' && e.valor === oldNome);
+    if (historicoEntry) {
+        historicoEntry.valor = nome;
+        historicoEntry.descricao = `Curso "${nome}" adicionado em ${novaDataHora.toLocaleDateString('pt-BR')} ${novaDataHora.toTimeString().slice(0,5)}`;
+        historicoEntry.data = novaDataHora.toLocaleDateString('pt-BR');
+        historicoEntry.hora = novaDataHora.toTimeString().slice(0,5);
+        historicoEntry.timestamp = novaDataHora.getTime();
+    }
+
+    saveData({ colaboradores, cargos: [...cargos], unidades: [...unidades] });
+    closeEditCursoModal();
+    openEditModal(colId);
+}
+
 
         function editHistorico(colId, idx, tipo, novaDescricao, novoValor) {
-            const col = colaboradores.find(c => c.id === colId);
-            if (col) {
-                const entry = col.historico[idx];
-                if (tipo === 'pontos' || tipo === 'nota') {
-                    novoValor = parseFloat(novoValor);
-                    if (!isNaN(novoValor)) {
-                        if (tipo === 'pontos') {
-                            col.pontos += (novoValor - entry.valor);
-                        } else if (tipo === 'nota') {
-                            const notaIdx = col.notas.findIndex(n => n === entry.valor);
-                            if (notaIdx !== -1) col.notas[notaIdx] = novoValor;
-                        }
-                        entry.valor = novoValor;
-                        entry.descricao = novaDescricao;
-                        saveData({ colaboradores, cargos: [...cargos], unidades: [...unidades] });
-                        openEditModal(col.id);
-                    }
-                }
-            }
-        }
+    const col = colaboradores.find(c => c.id === colId);
+    if (!col) return;
+
+    const entry = col.historico[idx];
+    const dataInput = document.getElementById('edit-historico-data').value;
+    const horaInput = document.getElementById('edit-historico-hora').value;
+
+    if (!dataInput || !horaInput) {
+        alert('Preencha data e hora!');
+        return;
+    }
+
+    const novaDataHora = new Date(`${dataInput}T${horaInput}:00`);
+    const novoValorNum = parseFloat(novoValor);
+
+    if (isNaN(novoValorNum)) {
+        alert('Valor inválido!');
+        return;
+    }
+
+    // Atualiza pontos se necessário
+    if (tipo === 'pontos') {
+        col.pontos += (novoValorNum - entry.valor);
+    } else if (tipo === 'nota') {
+        const notaIdx = col.notas.indexOf(entry.valor);
+        if (notaIdx !== -1) col.notas[notaIdx] = novoValorNum;
+    }
+
+    // Atualiza entrada
+    entry.valor = novoValorNum;
+    entry.descricao = novaDescricao;
+    entry.data = novaDataHora.toLocaleDateString('pt-BR');
+    entry.hora = novaDataHora.toTimeString().slice(0,5);
+    entry.timestamp = novaDataHora.getTime();
+
+    saveData({ colaboradores, cargos: [...cargos], unidades: [...unidades] });
+    closeEditHistoricoModal();
+    openEditModal(colId);
+}
 
         function removeHistorico(colId, idx, tipo) {
             const col = colaboradores.find(c => c.id === colId);
@@ -2019,13 +2197,12 @@ async function init() {
         }
     });
 
-document.getElementById('add-pontos-form').addEventListener('submit', async (e) => {
+    document.getElementById('add-pontos-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const colaboradorSelect = document.getElementById('colaborador-pontos');
     const colId = colaboradorSelect.value;
     const legenda = document.getElementById('legenda-pontos').value.trim();
-    const pontosInput = document.getElementById('pontos-add').value;
-    const pontos = parseInt(pontosInput);
+    const pontos = parseInt(document.getElementById('pontos-add').value);
 
     if (!legenda || isNaN(pontos)) {
         alert('Preencha a legenda e um valor válido de pontos!');
@@ -2037,53 +2214,30 @@ document.getElementById('add-pontos-form').addEventListener('submit', async (e) 
         return;
     }
 
-    const dataAtual = new Date().toLocaleDateString('pt-BR');
-    const descricaoBase = `${legenda}: ${pontos > 0 ? '+' : ''}${pontos} pontos (${dataAtual})`;
+    const dataAtual = new Date();
+    const descricaoBase = `${legenda}: ${pontos > 0 ? '+' : ''}${pontos} pontos (${dataAtual.toLocaleDateString('pt-BR')} ${dataAtual.toTimeString().slice(0,5)})`;
 
     if (colId === 'todos') {
-        // CONFIRMAÇÃO ANTES DE ENVIAR PARA TODOS
         const totalColaboradores = colaboradores.length;
-        const confirma = confirm(
-            `Você está prestes a aplicar:\n\n` +
-            `"${legenda}"\n` +
-            `${pontos > 0 ? '+' : ''}${pontos} pontos\n\n` +
-            `Para TODOS os ${totalColaboradores} colaboradores.\n\n` +
-            `Deseja confirmar esta ação?`
-        );
+        const confirma = confirm(`Aplicar a todos os ${totalColaboradores} colaboradores?`);
+        if (!confirma) return;
 
-        if (!confirma) {
-            alert('Ação cancelada.');
-            return;
-        }
-
-        // Aplica para todos
         colaboradores.forEach(col => {
             col.pontos += pontos;
-            col.historico.push({
-                tipo: 'pontos',
-                valor: pontos,
-                descricao: descricaoBase,
-                data: dataAtual
-            });
+            col.historico.push(criarEntradaHistorico('pontos', pontos, descricaoBase, dataAtual));
         });
-
-        alert(`Pontos aplicados com sucesso a TODOS os ${totalColaboradores} colaboradores!`);
+        alert(`Pontos aplicados a todos!`);
     } else {
         const col = colaboradores.find(c => c.id == colId);
         if (col) {
             col.pontos += pontos;
-            col.historico.push({
-                tipo: 'pontos',
-                valor: pontos,
-                descricao: descricaoBase,
-                data: dataAtual
-            });
+            col.historico.push(criarEntradaHistorico('pontos', pontos, descricaoBase, dataAtual));
         }
     }
 
     await saveData({ colaboradores, cargos: [...cargos], unidades: [...unidades] });
     document.getElementById('add-pontos-form').reset();
-    colaboradorSelect.selectedIndex = 0; // Volta para "Selecione um Colaborador"
+    colaboradorSelect.selectedIndex = 0;
     updateHistoricoPontos();
     updateRanking();
 });
@@ -2625,6 +2779,23 @@ function updateCursosNotaSelect() {
         document.addEventListener('contextmenu', function(e) {
             e.preventDefault();
         });
+
+// Substitua a criação de qualquer item no histórico por esta função:
+function criarEntradaHistorico(tipo, valor, descricao, data = null) {
+    const agora = new Date();
+    const dataHora = data 
+        ? new Date(data) 
+        : agora;
+    
+    return {
+        tipo,
+        valor,
+        descricao,
+        data: dataHora.toLocaleDateString('pt-BR'),
+        hora: dataHora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+        timestamp: dataHora.getTime()  // Para ordenação precisa
+    };
+}
 
     init();
     </script>
