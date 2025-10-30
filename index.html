@@ -1405,7 +1405,7 @@ function getFilteredColaboradores() {
             historico: [], 
             conquistas: [], 
             cursos: [],
-            ultimaPontuacao: null  // Para desempate
+            ultimaConclusaoCurso: null  // para desempate: mais recente vem primeiro
         };
 
         col.historico.forEach(entry => {
@@ -1431,7 +1431,6 @@ function getFilteredColaboradores() {
 
             if (incluir) {
                 const entryCompleta = { ...entry };
-                // Reconstruir timestamp se não existir (compatibilidade)
                 if (!entry.timestamp) {
                     const [dia, mes, ano] = entry.data.split('/').map(Number);
                     const [hora, minuto] = (entry.hora || '00:00').split(':').map(Number);
@@ -1442,10 +1441,6 @@ function getFilteredColaboradores() {
 
                 if (entry.tipo === 'pontos') {
                     cloned.pontos += entry.valor;
-                    // Atualiza última pontuação
-                    if (!cloned.ultimaPontuacao || entryCompleta.timestamp < cloned.ultimaPontuacao) {
-                        cloned.ultimaPontuacao = entryCompleta.timestamp;
-                    }
                 }
                 if (entry.tipo === 'nota') cloned.notas.push(entry.valor);
                 if (entry.tipo === 'conquista') {
@@ -1454,7 +1449,13 @@ function getFilteredColaboradores() {
                 }
                 if (entry.tipo === 'curso') {
                     const curso = col.cursos.find(c => c.nome === entry.valor);
-                    if (curso) cloned.cursos.push(curso);
+                    if (curso) {
+                        cloned.cursos.push(curso);
+                        // Atualiza a data da última conclusão de curso
+                        if (!cloned.ultimaConclusaoCurso || entryCompleta.timestamp > cloned.ultimaConclusaoCurso) {
+                            cloned.ultimaConclusaoCurso = entryCompleta.timestamp;
+                        }
+                    }
                 }
             }
         });
@@ -1466,12 +1467,12 @@ function getFilteredColaboradores() {
     return filtered.sort((a, b) => {
         if (b.pontos !== a.pontos) return b.pontos - a.pontos;
         if (b.notaMedia !== a.notaMedia) return b.notaMedia - a.notaMedia;
-        // Desempate: quem pontuou mais antigamente vem primeiro
-        if (a.ultimaPontuacao && b.ultimaPontuacao) {
-            return a.ultimaPontuacao - b.ultimaPontuacao;
+        // Desempate: quem concluiu o último curso mais recentemente vem primeiro
+        if (a.ultimaConclusaoCurso && b.ultimaConclusaoCurso) {
+            return b.ultimaConclusaoCurso - a.ultimaConclusaoCurso; // mais recente primeiro
         }
-        if (a.ultimaPontuacao) return -1;
-        if (b.ultimaPontuacao) return 1;
+        if (a.ultimaConclusaoCurso) return -1;
+        if (b.ultimaConclusaoCurso) return 1;
         return 0;
     });
 }
@@ -1509,10 +1510,10 @@ function updateRanking() {
         });
         cursosHTML += '</div>';
 
-        // Última pontuação formatada
-        const ultimaData = col.ultimaPontuacao 
-            ? new Date(col.ultimaPontuacao).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
-            : 'Nenhuma';
+        // Última conclusão de curso formatada
+        const ultimaConclusao = col.ultimaConclusaoCurso 
+            ? new Date(col.ultimaConclusaoCurso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
+            : 'Nenhum curso';
 
         card.innerHTML = `
             <div class="card-content">
@@ -1523,7 +1524,7 @@ function updateRanking() {
                     <div class="nota-media">Nota Média: ${col.notaMedia.toFixed(2)}</div>
                     <div><span class="ranking-item-label">Conquistas:</span>${conquistasHTML}</div>
                     <div><span class="ranking-item-label">Cursos:</span>${cursosHTML}</div>
-                    <div><small>Última pontuação: ${ultimaData}</small></div>
+                    <div><small>Última conclusão de curso: ${ultimaConclusao}</small></div>
                 </div>
             </div>
         `;
@@ -1911,7 +1912,7 @@ function closeEditCursoModal() {
     const historicoEntry = col.historico.find(e => e.tipo === 'conquista' && e.valor === oldNome);
     if (historicoEntry) {
         historicoEntry.valor = nome;
-        historicoEntry.descricao = `Conquista "${nome}" adicionada em ${novaDataHora.toLocaleDateString('pt-BR')} ${novaDataHora.toTimeString().slice(0,5)}`;
+        historicoEntry.descricao = `Conquista: "${nome}"`;
         historicoEntry.data = novaDataHora.toLocaleDateString('pt-BR');
         historicoEntry.hora = novaDataHora.toTimeString().slice(0,5);
         historicoEntry.timestamp = novaDataHora.getTime();
@@ -1950,7 +1951,7 @@ function editCurso() {
     const historicoEntry = col.historico.find(e => e.tipo === 'curso' && e.valor === oldNome);
     if (historicoEntry) {
         historicoEntry.valor = nome;
-        historicoEntry.descricao = `Curso "${nome}" adicionado em ${novaDataHora.toLocaleDateString('pt-BR')} ${novaDataHora.toTimeString().slice(0,5)}`;
+        historicoEntry.descricao = `Curso: "${nome}"`;
         historicoEntry.data = novaDataHora.toLocaleDateString('pt-BR');
         historicoEntry.hora = novaDataHora.toTimeString().slice(0,5);
         historicoEntry.timestamp = novaDataHora.getTime();
@@ -2256,7 +2257,7 @@ async function init() {
                 col.historico.push({
                     tipo: 'conquista',
                     valor: nome,
-                    descricao: `Conquista "${nome}" adicionada em ${new Date().toLocaleDateString('pt-BR')}`,
+                    descricao: `Conquista: "${nome}"`,
                     data: new Date().toLocaleDateString('pt-BR')
                 });
                 await saveData({ colaboradores, cargos: [...cargos], unidades: [...unidades] });
@@ -2301,7 +2302,7 @@ async function init() {
     col.historico.push({
         tipo: 'curso',
         valor: nome,
-        descricao: `Curso "${nome}" adicionado em ${new Date().toLocaleDateString('pt-BR')}`,
+        descricao: `Curso: "${nome}"`,
         data: new Date().toLocaleDateString('pt-BR')
     });
 
@@ -2311,7 +2312,7 @@ async function init() {
         col.historico.push({
             tipo: 'nota',
             valor: notaValor,
-            descricao: `Nota ${notaValor} no curso "${nome}" em ${new Date().toLocaleDateString('pt-BR')}`,
+            descricao: `Nota ${notaValor} no curso: "${nome}"`,
             data: new Date().toLocaleDateString('pt-BR')
         });
 
@@ -2322,7 +2323,7 @@ async function init() {
             col.historico.push({
                 tipo: 'pontos',
                 valor: pontos,
-                descricao: `Ganhou ${pontos} pontos pela nota ${notaValor} no curso "${nome}" em ${new Date().toLocaleDateString('pt-BR')}`,
+                descricao: `Ganhou ${pontos} pontos pela nota ${notaValor} no curso: "${nome}"`,
                 data: new Date().toLocaleDateString('pt-BR')
             });
         }
