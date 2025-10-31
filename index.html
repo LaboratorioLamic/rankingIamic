@@ -654,7 +654,7 @@
     align-items: center;
     gap: 10px;
     margin-bottom: 10px;
-    width: 50px;
+    width: 250px;
 }
     </style>
 </head>
@@ -786,10 +786,12 @@
                 <input type="number" id="pontos-add" placeholder="Pontos a adicionar (pode ser negativo)" required>
                 <button type="submit">Adicionar Pontos</button>
             </form>
+            <center>
             <div class="datahora">
                 <input type="date" id="data-pontos">
                 <input type="time" id="hora-pontos">
             </div>
+            </center>
             <div id="historico-pontos"></div>
         </div>
         
@@ -803,10 +805,12 @@
                 <input type="hidden" id="cor-conquista" value="#ffd700">
                 <button type="submit">Adicionar Conquista</button>
             </form>
+            <center>
             <div class="datahora">
                 <input type="date" id="data-conquista">
                 <input type="time" id="hora-conquista">
             </div>
+            </center>
             <div id="icons-selector" class="icons-selector"></div>
             <div id="colors-selector" class="colors-selector"></div>
             <div id="achievement-preview" class="achievement-preview"></div>
@@ -828,10 +832,12 @@
                 <input type="hidden" id="cor-curso" value="#ffd700">
                 <button type="submit">Adicionar Curso</button>
             </form>
+            <center>
             <div class="datahora">
                 <input type="date" id="data-curso" onchange="updateCursoPreview()">
                 <input type="time" id="hora-curso" onchange="updateCursoPreview()">
             </div>
+            </center>
             <div id="icons-selector-curso" class="icons-selector"></div>
             <div id="colors-selector-curso" class="colors-selector"></div>
             <div id="curso-preview" class="achievement-preview"></div>
@@ -848,10 +854,12 @@
                 </div>
                 <button type="submit">Adicionar Nota</button>
             </form>
+            <center>
             <div class="datahora">
                 <input type="date" id="data-nota">
                 <input type="time" id="hora-nota">
             </div>
+            </center>
             <div id="historico-notas"></div>
         </div>
     </div>
