@@ -1425,24 +1425,28 @@ function getFilteredColaboradores() {
     const filtroUnidade = document.getElementById('filtro-unidade').value;
     const filtroAno = document.getElementById('filtro-ano').value;
     const filtroMes = document.getElementById('filtro-mes').value;
+
     let filtered = colaboradores.filter(col => {
         let match = true;
         if (filtroCargo !== 'geral') match = match && col.cargos.includes(filtroCargo);
         if (filtroUnidade !== 'geral') match = match && col.unidade === filtroUnidade;
         return match;
     });
+
     filtered = filtered.map(col => {
         const cloned = {
             ...col,
             pontos: 0,
             notas: [],
             historico: [],
-            conquistas: [],
+            conquistas: [...col.conquistas], // ✅ mantém TODAS as conquistas, independentemente do filtro de tempo
             cursos: [],
-            ultimaConclusaoCurso: null // será o timestamp da última publicação de curso
+            ultimaConclusaoCurso: null
         };
+
         col.historico.forEach(entry => {
             let incluir = false;
+
             if (filtroAno === 'todos') {
                 incluir = true;
             } else if (filtroAno === 'manual') {
@@ -1460,6 +1464,7 @@ function getFilteredColaboradores() {
                 const [dia, mes, ano] = entry.data.split('/').map(Number);
                 incluir = ano == filtroAno && (filtroMes === 'todos' || mes == filtroMes);
             }
+
             if (incluir) {
                 const entryCompleta = { ...entry };
                 if (!entry.timestamp) {
@@ -1468,19 +1473,14 @@ function getFilteredColaboradores() {
                     entryCompleta.timestamp = new Date(ano, mes - 1, dia, hora, minuto).getTime();
                 }
                 cloned.historico.push(entryCompleta);
-                if (entry.tipo === 'pontos') {
-                    cloned.pontos += entry.valor;
-                }
+
+                if (entry.tipo === 'pontos') cloned.pontos += entry.valor;
                 if (entry.tipo === 'nota') cloned.notas.push(entry.valor);
-                if (entry.tipo === 'conquista') {
-                    const conq = col.conquistas.find(c => c.nome === entry.valor);
-                    if (conq) cloned.conquistas.push(conq);
-                }
+
                 if (entry.tipo === 'curso') {
                     const curso = col.cursos.find(c => c.nome === entry.valor);
                     if (curso) {
                         cloned.cursos.push(curso);
-                        // Atualiza com a última (mais recente) publicação de curso
                         if (!cloned.ultimaConclusaoCurso || entryCompleta.timestamp > cloned.ultimaConclusaoCurso) {
                             cloned.ultimaConclusaoCurso = entryCompleta.timestamp;
                         }
@@ -1488,21 +1488,21 @@ function getFilteredColaboradores() {
                 }
             }
         });
+
         cloned.notaMedia = calculateNotaMedia(cloned.notas);
         return cloned;
     }).filter(col => col.historico.length > 0 || filtroAno === 'todos');
+
     return filtered.sort((a, b) => {
         if (b.pontos !== a.pontos) return b.pontos - a.pontos;
         if (b.notaMedia !== a.notaMedia) return b.notaMedia - a.notaMedia;
-        // Desempate: quem concluiu o último curso mais cedo (menor timestamp) vem primeiro
-        if (a.ultimaConclusaoCurso && b.ultimaConclusaoCurso) {
-            return a.ultimaConclusaoCurso - b.ultimaConclusaoCurso;
-        }
+        if (a.ultimaConclusaoCurso && b.ultimaConclusaoCurso) return a.ultimaConclusaoCurso - b.ultimaConclusaoCurso;
         if (a.ultimaConclusaoCurso) return -1;
         if (b.ultimaConclusaoCurso) return 1;
         return 0;
     });
 }
+
 
 function updateRanking() {
     const filtered = getFilteredColaboradores();
