@@ -1439,7 +1439,7 @@ function getFilteredColaboradores() {
             historico: [],
             conquistas: [],
             cursos: [],
-            ultimaConclusaoCurso: null // para desempate: mais antiga vem primeiro
+            ultimaConclusaoCurso: null // será o timestamp da última publicação de curso
         };
         col.historico.forEach(entry => {
             let incluir = false;
@@ -1480,8 +1480,8 @@ function getFilteredColaboradores() {
                     const curso = col.cursos.find(c => c.nome === entry.valor);
                     if (curso) {
                         cloned.cursos.push(curso);
-                        // Atualiza a data da última conclusão de curso (mais antiga)
-                        if (!cloned.ultimaConclusaoCurso || entryCompleta.timestamp < cloned.ultimaConclusaoCurso) {
+                        // Atualiza com a última (mais recente) publicação de curso
+                        if (!cloned.ultimaConclusaoCurso || entryCompleta.timestamp > cloned.ultimaConclusaoCurso) {
                             cloned.ultimaConclusaoCurso = entryCompleta.timestamp;
                         }
                     }
@@ -1494,9 +1494,9 @@ function getFilteredColaboradores() {
     return filtered.sort((a, b) => {
         if (b.pontos !== a.pontos) return b.pontos - a.pontos;
         if (b.notaMedia !== a.notaMedia) return b.notaMedia - a.notaMedia;
-        // Desempate: quem concluiu o curso mais cedo vem primeiro (data mais antiga)
+        // Desempate: quem concluiu o último curso mais cedo (menor timestamp) vem primeiro
         if (a.ultimaConclusaoCurso && b.ultimaConclusaoCurso) {
-            return a.ultimaConclusaoCurso - b.ultimaConclusaoCurso; // menor timestamp primeiro
+            return a.ultimaConclusaoCurso - b.ultimaConclusaoCurso;
         }
         if (a.ultimaConclusaoCurso) return -1;
         if (b.ultimaConclusaoCurso) return 1;
@@ -1510,7 +1510,6 @@ function updateRanking() {
     const restDiv = document.getElementById('rest-ranking');
     top3Div.innerHTML = '';
     restDiv.innerHTML = '';
-
     filtered.forEach((col, index) => {
         const card = document.createElement('div');
         card.classList.add('card');
@@ -1518,7 +1517,6 @@ function updateRanking() {
         if (index === 0) { card.classList.add('rank-1'); trophyColor = 'gold'; trophyIcon = '<i class="fas fa-trophy trophy" style="color: gold;"></i>'; }
         else if (index === 1) { card.classList.add('rank-2'); trophyColor = 'silver'; trophyIcon = '<i class="fas fa-trophy trophy" style="color: silver;"></i>'; }
         else if (index === 2) { card.classList.add('rank-3'); trophyColor = '#cd7f32'; trophyIcon = '<i class="fas fa-trophy trophy" style="color: #cd7f32;"></i>'; }
-
         let conquistasHTML = '<div class="achievements-ranking">';
         col.conquistas.forEach(conq => {
             conquistasHTML += `<div class="achievement-icon-ranking">
@@ -1527,7 +1525,6 @@ function updateRanking() {
             </div>`;
         });
         conquistasHTML += '</div>';
-
         let cursosHTML = '<div class="cursos-ranking">';
         col.cursos.forEach(curso => {
             cursosHTML += `<div class="curso-icon-ranking">
@@ -1536,12 +1533,10 @@ function updateRanking() {
             </div>`;
         });
         cursosHTML += '</div>';
-
-        // Última conclusão de curso formatada
-        const ultimaConclusao = col.ultimaConclusaoCurso 
+        // Exibe a última publicação de curso (mais recente)
+        const ultimaConclusao = col.ultimaConclusaoCurso
             ? new Date(col.ultimaConclusaoCurso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
             : 'Nenhum curso';
-
         card.innerHTML = `
             <div class="card-content">
                 <div class="avatar">${col.nome.charAt(0)}</div>
@@ -1551,7 +1546,7 @@ function updateRanking() {
                     <div class="nota-media">Nota Média: ${col.notaMedia.toFixed(2)}</div>
                     <div><span class="ranking-item-label">Conquistas:</span>${conquistasHTML}</div>
                     <div><span class="ranking-item-label">Cursos:</span>${cursosHTML}</div>
-                    <div><small>Última conclusão de curso: ${ultimaConclusao}</small></div>
+                    <div><small>Última publicação de curso: ${ultimaConclusao}</small></div>
                 </div>
             </div>
         `;
