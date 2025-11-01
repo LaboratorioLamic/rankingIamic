@@ -1586,15 +1586,29 @@ function openModal(col) {
 
     const history = document.getElementById('modal-history');
     history.innerHTML = '';
-    col.historico.slice(0, 10).reverse().forEach(entry => {
+
+    // ✅ Ordena histórico do mais recente para o mais antigo (considerando data e hora)
+    const historicoOrdenado = [...col.historico].sort((a, b) => {
+        const [diaA, mesA, anoA] = a.data.split('/').map(Number);
+        const [horaA, minutoA] = (a.hora || '00:00').split(':').map(Number);
+        const [diaB, mesB, anoB] = b.data.split('/').map(Number);
+        const [horaB, minutoB] = (b.hora || '00:00').split(':').map(Number);
+        const dataHoraA = new Date(anoA, mesA - 1, diaA, horaA, minutoA).getTime();
+        const dataHoraB = new Date(anoB, mesB - 1, diaB, horaB, minutoB).getTime();
+        return dataHoraB - dataHoraA; // mais recente primeiro
+    });
+
+    historicoOrdenado.slice(0, 10).forEach(entry => {
         const li = document.createElement('li');
-        li.innerHTML = `<strong>${entry.data} ${entry.hora}</strong> – ${entry.descricao}`;
+        li.innerHTML = `<strong>${entry.data} ${entry.hora || ''}</strong> – ${entry.descricao}`;
         history.appendChild(li);
     });
 
     document.getElementById('modal').style.display = 'block';
 }
-        function closeModal() {
+
+
+function closeModal() {
             document.getElementById('modal').style.display = 'none';
         }
 
@@ -1622,67 +1636,97 @@ function openModal(col) {
             });
         }
 
-        function openEditModal(colId) {
-            const col = colaboradores.find(c => c.id === colId);
-            if (col) {
-                document.getElementById('edit-id').value = col.id;
-                document.getElementById('edit-nome').value = col.nome;
-                tempCargosEdit = [...col.cargos];
-                updateCargosAdicionadosEdit();
-                document.getElementById('edit-unidade').value = col.unidade;
-                const achievements = document.getElementById('edit-achievements');
-                achievements.innerHTML = '';
-                col.conquistas.forEach((conq, idx) => {
-                    const div = document.createElement('div');
-                    div.classList.add('achievement-card');
-                    div.style.background = `linear-gradient(to bottom, ${conq.cor}, ${conq.cor})`;
-                    div.style.color = isDarkColor(conq.cor) ? '#ffffff' : '#000000';
-                    div.innerHTML = `<i class="${conq.icone} achievement-icon"></i> ${conq.nome}<span class="achievement-description">${conq.descricao || ''}</span>`;
-                    const editBtn = document.createElement('button');
-                    editBtn.classList.add('edit-conquista-btn');
-                    editBtn.innerHTML = '<i class="fas fa-pencil-alt"></i>';
-                    editBtn.onclick = () => openEditConquistaModal(col.id, idx);
-                    div.appendChild(editBtn);
-                    achievements.appendChild(div);
-                });
-                const cursosEdit = document.getElementById('edit-cursos');
-                cursosEdit.innerHTML = '';
-                col.cursos.forEach((curso, idx) => {
-                    const div = document.createElement('div');
-                    div.classList.add('achievement-card');
-                    div.style.background = `linear-gradient(to bottom, ${curso.cor}, ${curso.cor})`;
-                    div.style.color = isDarkColor(curso.cor) ? '#ffffff' : '#000000';
-                    div.innerHTML = `<i class="${curso.icone} achievement-icon"></i> ${curso.nome}<span class="achievement-description">${curso.descricao || ''}</span>`;
-                    const editBtn = document.createElement('button');
-                    editBtn.classList.add('edit-conquista-btn');
-                    editBtn.innerHTML = '<i class="fas fa-pencil-alt"></i>';
-                    editBtn.onclick = () => openEditCursoModal(col.id, idx);
-                    div.appendChild(editBtn);
-                    cursosEdit.appendChild(div);
-                });
-                const history = document.getElementById('edit-history');
-                history.innerHTML = '';
-                col.historico.slice(0, 10).reverse().forEach((entry, idx) => {
-                    const li = document.createElement('li');
-                    li.classList.add('history-item');
-                    const span = document.createElement('span');
-                    span.textContent = entry.descricao;
-                    li.appendChild(span);
-                    if (entry.tipo !== 'conquista' && entry.tipo !== 'curso') {
-                        const editBtn = document.createElement('button');
-                        editBtn.textContent = 'Editar';
-                        editBtn.onclick = () => openEditHistoricoModal(col.id, col.historico.findIndex(e => e === entry), entry.tipo, entry.descricao, entry.valor);
-                        li.appendChild(editBtn);
-                    }
-                    const removeBtn = document.createElement('button');
-                    removeBtn.textContent = 'Remover';
-                    removeBtn.onclick = () => removeHistorico(col.id, col.historico.findIndex(e => e === entry), entry.tipo);
-                    li.appendChild(removeBtn);
-                    history.appendChild(li);
-                });
-                document.getElementById('edit-modal').style.display = 'block';
+function openEditModal(colId) {
+    const col = colaboradores.find(c => c.id === colId);
+    if (col) {
+        document.getElementById('edit-id').value = col.id;
+        document.getElementById('edit-nome').value = col.nome;
+        tempCargosEdit = [...col.cargos];
+        updateCargosAdicionadosEdit();
+        document.getElementById('edit-unidade').value = col.unidade;
+
+        const achievements = document.getElementById('edit-achievements');
+        achievements.innerHTML = '';
+        col.conquistas.forEach((conq, idx) => {
+            const div = document.createElement('div');
+            div.classList.add('achievement-card');
+            div.style.background = `linear-gradient(to bottom, ${conq.cor}, ${conq.cor})`;
+            div.style.color = isDarkColor(conq.cor) ? '#ffffff' : '#000000';
+            div.innerHTML = `<i class="${conq.icone} achievement-icon"></i> ${conq.nome}<span class="achievement-description">${conq.descricao || ''}</span>`;
+            const editBtn = document.createElement('button');
+            editBtn.classList.add('edit-conquista-btn');
+            editBtn.innerHTML = '<i class="fas fa-pencil-alt"></i>';
+            editBtn.onclick = () => openEditConquistaModal(col.id, idx);
+            div.appendChild(editBtn);
+            achievements.appendChild(div);
+        });
+
+        const cursosEdit = document.getElementById('edit-cursos');
+        cursosEdit.innerHTML = '';
+        col.cursos.forEach((curso, idx) => {
+            const div = document.createElement('div');
+            div.classList.add('achievement-card');
+            div.style.background = `linear-gradient(to bottom, ${curso.cor}, ${curso.cor})`;
+            div.style.color = isDarkColor(curso.cor) ? '#ffffff' : '#000000';
+            div.innerHTML = `<i class="${curso.icone} achievement-icon"></i> ${curso.nome}<span class="achievement-description">${curso.descricao || ''}</span>`;
+            const editBtn = document.createElement('button');
+            editBtn.classList.add('edit-conquista-btn');
+            editBtn.innerHTML = '<i class="fas fa-pencil-alt"></i>';
+            editBtn.onclick = () => openEditCursoModal(col.id, idx);
+            div.appendChild(editBtn);
+            cursosEdit.appendChild(div);
+        });
+
+        const history = document.getElementById('edit-history');
+        history.innerHTML = '';
+
+        // ✅ Ordena histórico por data e hora (mais recente primeiro)
+        const historicoOrdenado = [...col.historico].sort((a, b) => {
+            const [diaA, mesA, anoA] = a.data.split('/').map(Number);
+            const [horaA, minutoA] = (a.hora || '00:00').split(':').map(Number);
+            const [diaB, mesB, anoB] = b.data.split('/').map(Number);
+            const [horaB, minutoB] = (b.hora || '00:00').split(':').map(Number);
+
+            const dataHoraA = new Date(anoA, mesA - 1, diaA, horaA, minutoA).getTime();
+            const dataHoraB = new Date(anoB, mesB - 1, diaB, horaB, minutoB).getTime();
+
+            return dataHoraB - dataHoraA; // mais recente primeiro
+        });
+
+        historicoOrdenado.forEach(entry => {
+            const li = document.createElement('li');
+            li.classList.add('history-item');
+            const span = document.createElement('span');
+            span.textContent = `${entry.data} ${entry.hora || ''} – ${entry.descricao}`;
+            li.appendChild(span);
+
+            if (entry.tipo !== 'conquista' && entry.tipo !== 'curso') {
+                const editBtn = document.createElement('button');
+                editBtn.textContent = 'Editar';
+                editBtn.onclick = () =>
+                    openEditHistoricoModal(
+                        col.id,
+                        col.historico.findIndex(e => e === entry),
+                        entry.tipo,
+                        entry.descricao,
+                        entry.valor
+                    );
+                li.appendChild(editBtn);
             }
-        }
+
+            const removeBtn = document.createElement('button');
+            removeBtn.textContent = 'Remover';
+            removeBtn.onclick = () =>
+                removeHistorico(col.id, col.historico.findIndex(e => e === entry), entry.tipo);
+            li.appendChild(removeBtn);
+
+            history.appendChild(li);
+        });
+
+        document.getElementById('edit-modal').style.display = 'block';
+    }
+}
+
 
         function closeEditModal() {
             document.getElementById('edit-modal').style.display = 'none';
