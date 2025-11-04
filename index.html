@@ -723,6 +723,8 @@
             <button class="sub-tab-button active" onclick="openSubTab('cadastro-colaboradores')">Colaboradores</button>
             <button class="sub-tab-button" onclick="openSubTab('cadastro-cargos')">Cargos</button>
             <button class="sub-tab-button" onclick="openSubTab('cadastro-unidades')">Unidades</button>
+            <button class="sub-tab-button" onclick="openSubTab('cadastro-conquistas')">Conquistas</button>
+        <button class="sub-tab-button" onclick="openSubTab('cadastro-cursos')">Cursos</button>
         </div>
 
         <div id="cadastro-colaboradores" class="sub-tab-content active">
@@ -770,6 +772,42 @@
         </div>
     </div>
 
+    <div id="cadastro-conquistas" class="sub-tab-content">
+        <div class="frame">
+            <form id="conquista-form" class="cadastro-form">
+                <input type="text" id="novo-conquista-nome" placeholder="Nome da Conquista" required>
+                <input type="text" id="novo-conquista-desc" placeholder="Descrição da Conquista" required>
+                <button type="button" onclick="toggleSelectorsConquistaCadastro()">Selecionar Ícone</button>
+                <input type="hidden" id="novo-conquista-icone" >
+                <input type="hidden" id="novo-conquista-cor" value="#ffd700">
+                <button type="submit">Adicionar Conquista</button>
+            </form>
+            <div id="icons-selector-conquista-cadastro" class="icons-selector"></div>
+            <div id="colors-selector-conquista-cadastro" class="colors-selector"></div>
+        </div>
+        <h2 class="center">Conquistas Cadastradas</h2>
+        <div id="conquistas-list" class="cargos-list"></div>
+    </div>
+
+    <!-- CADASTRO DE CURSOS -->
+    <div id="cadastro-cursos" class="sub-tab-content">
+        <div class="frame">
+            <form id="curso-form" class="cadastro-form">
+                <input type="text" id="novo-curso-nome" placeholder="Nome do Curso" required>
+                <input type="text" id="novo-curso-desc" placeholder="Descrição do Curso" required>
+                <button type="button" onclick="toggleSelectorsCursoCadastro()">Selecionar Ícone</button>
+                <input type="hidden" id="novo-curso-icone" required>
+                <input type="hidden" id="novo-curso-cor" value="#ffd700">
+                <button type="submit">Adicionar Curso</button>
+            </form>
+            <div id="icons-selector-curso-cadastro" class="icons-selector"></div>
+            <div id="colors-selector-curso-cadastro" class="colors-selector"></div>
+        </div>
+        <h2 class="center">Cursos Cadastrados</h2>
+        <div id="cursos-list" class="cargos-list"></div>
+    </div>
+</div>
+
     <div id="adicionar" class="tab-content">
         <h1 class="center">Adicionar Itens</h1>
         <div class="sub-tabs">
@@ -798,49 +836,36 @@
         <div id="add-conquista" class="sub-tab-content">
             <form id="add-conquista-form">
                 <select id="colaborador-conquista" required onchange="updateHistoricoConquistas()"></select>
-                <input type="text" id="nome-conquista" placeholder="Nome da Conquista" required oninput="updateAchievementPreview()">
-                <input type="text" id="desc-conquista" placeholder="Descrição da Conquista" required oninput="updateAchievementPreview()">
-                <button type="button" onclick="toggleSelectors()">Selecionar Ícone</button>
-                <input type="hidden" id="icone-conquista" required>
-                <input type="hidden" id="cor-conquista" value="#ffd700">
+                <select id="conquista-select" required onchange="updateConquistaSelectPreview()"></select>
+                <center>
+                    <div class="datahora">
+                        <input type="date" id="data-conquista">
+                        <input type="time" id="hora-conquista">
+                    </div>
+                </center>
                 <button type="submit">Adicionar Conquista</button>
             </form>
-            <center>
-            <div class="datahora">
-                <input type="date" id="data-conquista">
-                <input type="time" id="hora-conquista">
-            </div>
-            </center>
-            <div id="icons-selector" class="icons-selector"></div>
-            <div id="colors-selector" class="colors-selector"></div>
-            <div id="achievement-preview" class="achievement-preview"></div>
+            <div id="conquista-select-preview" class="achievement-preview"></div>
             <div id="historico-conquistas"></div>
         </div>
         
         <div id="add-cursos" class="sub-tab-content">
             <form id="add-cursos-form">
                 <select id="colaborador-cursos" required onchange="updateHistoricoCursos()"></select>
-                <input type="text" id="nome-curso" placeholder="Nome do Curso" required oninput="updateCursoPreview()">
-                <input type="text" id="desc-curso" placeholder="Descrição do Curso" required oninput="updateCursoPreview()">
+                <select id="curso-select" required onchange="updateCursoSelectPreview()"></select>
                 <div class="nota-container">
                     <input type="number" id="nota-curso" placeholder="Nota da Avaliação (0-10)" min="0" max="10" step="0.1">
                     <label style="margin-left: 20px;">Pontuar: <input type="checkbox" id="pontuar-curso" checked></label>
                 </div>
-                
-                <button type="button" onclick="toggleSelectorsCurso()">Selecionar Ícone</button>
-                <input type="hidden" id="icone-curso" required>
-                <input type="hidden" id="cor-curso" value="#ffd700">
+                <center>
+                    <div class="datahora">
+                        <input type="date" id="data-curso">
+                        <input type="time" id="hora-curso">
+                    </div>
+                </center>
                 <button type="submit">Adicionar Curso</button>
             </form>
-            <center>
-            <div class="datahora">
-                <input type="date" id="data-curso" onchange="updateCursoPreview()">
-                <input type="time" id="hora-curso" onchange="updateCursoPreview()">
-            </div>
-            </center>
-            <div id="icons-selector-curso" class="icons-selector"></div>
-            <div id="colors-selector-curso" class="colors-selector"></div>
-            <div id="curso-preview" class="achievement-preview"></div>
+            <div id="curso-select-preview" class="achievement-preview"></div>
             <div id="historico-cursos"></div>
         </div>
         
@@ -1053,19 +1078,25 @@
         }
 
         async function saveData(data) {
-            try {
-                await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Master-Key': API_KEY
-                    },
-                    body: JSON.stringify(data)
-                });
-            } catch (error) {
-                console.error('Erro ao salvar dados:', error);
-            }
-        }
+    try {
+        await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Master-Key': API_KEY
+            },
+            body: JSON.stringify({
+                colaboradores,
+                cargos: [...cargos],
+                unidades: [...unidades],
+                conquistasCadastradas,
+                cursosCadastrados
+            })
+        });
+    } catch (error) {
+        console.error('Erro ao salvar dados:', error);
+    }
+}
 
         async function loadPassword() {
             try {
@@ -1216,24 +1247,30 @@
         }
 
         function openSubTab(subTabName) {
-            document.querySelectorAll('.sub-tab-content').forEach(tab => tab.classList.remove('active'));
-            document.querySelectorAll('.sub-tab-button').forEach(btn => btn.classList.remove('active'));
-            document.getElementById(subTabName).classList.add('active');
-            document.querySelector(`[onclick="openSubTab('${subTabName}')"]`).classList.add('active');
-            if (subTabName === 'add-pontos') updateHistoricoPontos();
-            if (subTabName === 'add-conquista') {
-                updateHistoricoConquistas();
-                updateAchievementPreview();
-            }
-            if (subTabName === 'add-cursos') {
-                updateHistoricoCursos();
-                updateCursoPreview();
-            }
-            if (subTabName === 'add-nota') updateHistoricoNotas();
-            if (subTabName === 'cadastro-colaboradores') updateColaboradoresList();
-            if (subTabName === 'cadastro-cargos') updateCargosList();
-            if (subTabName === 'cadastro-unidades') updateUnidadesList();
-        }
+    document.querySelectorAll('.sub-tab-content').forEach(tab => tab.classList.remove('active'));
+    document.querySelectorAll('.sub-tab-button').forEach(btn => btn.classList.remove('active'));
+    document.getElementById(subTabName).classList.add('active');
+    document.querySelector(`[onclick="openSubTab('${subTabName}')"]`).classList.add('active');
+
+    if (subTabName === 'add-pontos') updateHistoricoPontos();
+    if (subTabName === 'add-conquista') { updateConquistaSelect(); updateHistoricoConquistas(); }
+    if (subTabName === 'add-cursos') { updateCursoSelect(); updateHistoricoCursos(); }
+    if (subTabName === 'add-nota') updateHistoricoNotas();
+    if (subTabName === 'cadastro-colaboradores') updateColaboradoresList();
+    if (subTabName === 'cadastro-cargos') updateCargosList();
+    if (subTabName === 'cadastro-unidades') updateUnidadesList();
+    if (subTabName === 'cadastro-conquistas') { initConquistaCadastroSelectors(); updateConquistasList(); }
+    if (subTabName === 'cadastro-cursos') { initCursoCadastroSelectors(); updateCursosList(); }
+    if (subTabName === 'cadastro-conquistas') {
+        initConquistaCadastroSelectors();   // cria ícones + cores
+        updateConquistasList();
+    }
+    if (subTabName === 'cadastro-cursos') {
+        initCursoCadastroSelectors();       // cria ícones + cores
+        updateCursosList();
+    }
+}
+
 
 function updateColaboradoresSelects() {
     const selects = [
@@ -2186,6 +2223,8 @@ async function init() {
     colaboradores = data.colaboradores || [];
     cargos = new Set(data.cargos || []);
     unidades = new Set(data.unidades || []);
+    conquistasCadastradas = data.conquistasCadastradas || [];   // novo
+    cursosCadastrados    = data.cursosCadastrados || [];       // novo
 
     // Limpar pontos com mais de 3 anos
     const currentYear = new Date().getFullYear();
@@ -2207,17 +2246,17 @@ async function init() {
     // Salvar dados atualizados
     await saveData({ colaboradores, cargos: [...cargos], unidades: [...unidades] });
 
-    initIconsSelector('icons-selector', 'icone-conquista');
-    initIconsSelector('icons-selector-curso', 'icone-curso');
-    initColorsSelector('colors-selector', 'cor-conquista');
-    initColorsSelector('colors-selector-curso', 'cor-curso');
     updateAnoFilter();
     updateFilters();
     updateRanking();
     updateColaboradoresList();
     updateCargosList();
     updateUnidadesList();
+    updateConquistasList();
+    updateCursosList();
     updateColaboradoresSelects();
+    updateConquistaSelect();
+    updateCursoSelect();
     hideLoading();
 }
 
@@ -2330,98 +2369,101 @@ async function init() {
 
 document.getElementById('add-conquista-form').addEventListener('submit', async (e) => {
     e.preventDefault();
+
     const colId = parseInt(document.getElementById('colaborador-conquista').value);
-    const nome = document.getElementById('nome-conquista').value;
-    const descricao = document.getElementById('desc-conquista').value;
-    const icone = document.getElementById('icone-conquista').value;
-    const cor = document.getElementById('cor-conquista').value;
+    const conquistaSelect = document.getElementById('conquista-select');
+    const conquistaIdx = conquistaSelect.value;  // <-- CORRETO: usa o VALUE do <option>
+    const conquista = conquistasCadastradas[conquistaIdx];
     const dataInput = document.getElementById('data-conquista').value;
     const horaInput = document.getElementById('hora-conquista').value || '00:00';
 
-    if (!colId || !nome || !icone || !dataInput) {
-        alert('Preencha todos os campos obrigatórios, incluindo data!');
+    // Validação mais segura
+    if (!colId || conquistaIdx === "" || !conquista || !dataInput) {
+        alert('Preencha todos os campos!');
         return;
     }
 
     const dataHora = new Date(`${dataInput}T${horaInput}:00`);
     const col = colaboradores.find(c => c.id === colId);
+
     if (col) {
-        col.conquistas.push({ nome, icone, cor, descricao });
-        col.historico.push(criarEntradaHistorico('conquista', nome, `Conquista: "${nome}"`, dataHora));
-        await saveData({ colaboradores, cargos: [...cargos], unidades: [...unidades] });
+        col.conquistas.push({ ...conquista });
+        col.historico.push(criarEntradaHistorico('conquista', conquista.nome,
+            `Conquista: "${conquista.nome}"`, dataHora));
+
+        await saveData();
+
+        // Reset + data atual
         document.getElementById('add-conquista-form').reset();
-        document.getElementById('icons-selector').style.display = 'none';
-        document.getElementById('colors-selector').style.display = 'none';
         const agora = new Date();
         document.getElementById('data-conquista').value = agora.toISOString().split('T')[0];
         document.getElementById('hora-conquista').value = agora.toTimeString().slice(0, 5);
+
         updateHistoricoConquistas();
-        updateAchievementPreview();
     }
 });
-
-    document.getElementById('add-cursos-form').addEventListener('submit', async (e) => {
+document.getElementById('add-cursos-form').addEventListener('submit', async (e) => {
     e.preventDefault();
+
     const colId = parseInt(document.getElementById('colaborador-cursos').value);
-    const nome = document.getElementById('nome-curso').value;
-    const descricao = document.getElementById('desc-curso').value;
-    const notaInput = document.getElementById('nota-curso');
-    const notaValor = notaInput.value.trim() === '' ? null : parseFloat(notaInput.value);
+    const cursoSelect = document.getElementById('curso-select');
+    const cursoIdx = cursoSelect.value;  // <-- CORRETO: usa o VALUE do <option>
+    const curso = cursosCadastrados[cursoIdx];
+
+    const notaInput = document.getElementById('nota-curso').value.trim();
+    const notaValor = notaInput === '' ? null : parseFloat(notaInput);
     const pontuar = document.getElementById('pontuar-curso').checked;
-    const icone = document.getElementById('icone-curso').value;
-    const cor = document.getElementById('cor-curso').value;
     const dataInput = document.getElementById('data-curso').value;
-    const horaInput = document.getElementById('hora-curso').value;
-    
-    if (!colId || !nome || !icone) {
-        alert('Preencha todos os campos obrigatórios e selecione um ícone!');
+    const horaInput = document.getElementById('hora-curso').value || '00:00';
+
+    // === VALIDAÇÃO MELHORADA ===
+    if (!colId || cursoIdx === "" || !curso || !dataInput) {
+        alert('Preencha colaborador, curso e data!');
         return;
     }
     if (notaValor !== null && (isNaN(notaValor) || notaValor < 0 || notaValor > 10)) {
-        alert('A nota deve estar entre 0 e 10!');
-        return;
-    }
-    if (!dataInput) {
-        alert('Selecione uma data para o curso!');
+        alert('Nota deve ser entre 0 e 10!');
         return;
     }
 
-    const dataHora = new Date(`${dataInput}T${horaInput || '00:00'}:00`);
+    const dataHora = new Date(`${dataInput}T${horaInput}:00`);
     const col = colaboradores.find(c => c.id === colId);
     if (!col) return;
 
-    // Adiciona o curso com data/hora
-    col.cursos.push({ nome, icone, cor, descricao });
-    col.historico.push(criarEntradaHistorico('curso', nome, `Curso: "${nome}"`, dataHora));
+    // === Adiciona o curso ===
+    col.cursos.push({ ...curso });
+    col.historico.push(criarEntradaHistorico('curso', curso.nome,
+        `Curso: "${curso.nome}"`, dataHora));
 
-    // Se houver nota válida
+    // === Nota e pontuação (se preenchida) ===
     if (notaValor !== null) {
         col.notas.push(notaValor);
-        col.historico.push(criarEntradaHistorico('nota', notaValor, `Nota ${notaValor} no curso: "${nome}"`, dataHora));
+        col.historico.push(criarEntradaHistorico('nota', notaValor,
+            `Nota ${notaValor} no curso: "${curso.nome}"`, dataHora));
+
         if (pontuar) {
             const pontos = notaValor * 10;
             col.pontos += pontos;
-            col.historico.push(criarEntradaHistorico('pontos', pontos, `Ganhou ${pontos} pontos pela nota ${notaValor} no curso: "${nome}"`, dataHora));
+            col.historico.push(criarEntradaHistorico('pontos', pontos,
+                `Ganhou ${pontos} pontos pela nota ${notaValor} no curso: "${curso.nome}"`, dataHora));
         }
     }
 
-    await saveData({ colaboradores, cargos: [...cargos], unidades: [...unidades] });
+    // === Salva e atualiza ===
+    await saveData();
 
     // Reset do formulário
     document.getElementById('add-cursos-form').reset();
     document.getElementById('pontuar-curso').checked = true;
-    // Define data/hora padrão como "agora"
+
+    // Preenche data/hora atual
     const agora = new Date();
     document.getElementById('data-curso').value = agora.toISOString().split('T')[0];
     document.getElementById('hora-curso').value = agora.toTimeString().slice(0, 5);
-    document.getElementById('icons-selector-curso').style.display = 'none';
-    document.getElementById('colors-selector-curso').style.display = 'none';
 
     updateHistoricoCursos();
-    updateCursoPreview();
     updateRanking();
 });
-
 document.getElementById('add-nota-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const colId = parseInt(document.getElementById('colaborador-nota').value);
@@ -2891,6 +2933,210 @@ const agoraInit = new Date();
 });
 document.getElementById('data-curso').value = agoraInit.toISOString().split('T')[0];
 document.getElementById('hora-curso').value = agoraInit.toTimeString().slice(0, 5);
+
+document.getElementById('conquista-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const nome = document.getElementById('novo-conquista-nome').value.trim();
+    const desc = document.getElementById('novo-conquista-desc').value.trim();
+    const icone = document.getElementById('novo-conquista-icone').value;
+    const cor   = document.getElementById('novo-conquista-cor').value;
+
+    if (!nome || !icone) { alert('Preencha nome e ícone!'); return; }
+
+    conquistasCadastradas.push({ nome, descricao: desc, icone, cor });
+    await saveData();
+    document.getElementById('conquista-form').reset();
+    document.getElementById('icons-selector-conquista-cadastro').style.display = 'none';
+    document.getElementById('colors-selector-conquista-cadastro').style.display = 'none';
+    updateConquistasList();
+    updateConquistaSelect();
+});
+
+document.getElementById('curso-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const nome = document.getElementById('novo-curso-nome').value.trim();
+    const desc = document.getElementById('novo-curso-desc').value.trim();
+    const icone = document.getElementById('novo-curso-icone').value;
+    const cor   = document.getElementById('novo-curso-cor').value;
+
+    if (!nome || !icone) { alert('Preencha nome e ícone!'); return; }
+
+    cursosCadastrados.push({ nome, descricao: desc, icone, cor });
+    await saveData();
+    document.getElementById('curso-form').reset();
+    document.getElementById('icons-selector-curso-cadastro').style.display = 'none';
+    document.getElementById('colors-selector-curso-cadastro').style.display = 'none';
+    updateCursosList();
+    updateCursoSelect();
+});
+
+// 1. Seletores de cadastro (conquista)
+function toggleSelectorsConquistaCadastro() {
+    const icons = document.getElementById('icons-selector-conquista-cadastro');
+    const colors = document.getElementById('colors-selector-conquista-cadastro');
+    const visible = icons.style.display === 'grid';
+    icons.style.display = visible ? 'none' : 'grid';
+    colors.style.display = visible ? 'none' : 'grid';
+}
+function initConquistaCadastroSelectors() {
+    const container = document.getElementById('icons-selector-conquista-cadastro');
+    const input = document.getElementById('novo-conquista-icone');
+    if (!container || !input) return; // proteção extra
+    initIconsSelector('icons-selector-conquista-cadastro', 'novo-conquista-icone');
+    initColorsSelector('colors-selector-conquista-cadastro', 'novo-conquista-cor');
+}
+
+// 2. Seletores de cadastro (curso)
+function toggleSelectorsCursoCadastro() {
+    const icons = document.getElementById('icons-selector-curso-cadastro');
+    const colors = document.getElementById('colors-selector-curso-cadastro');
+    const visible = icons.style.display === 'grid';
+    icons.style.display = visible ? 'none' : 'grid';
+    colors.style.display = visible ? 'none' : 'grid';
+}
+function initCursoCadastroSelectors() {
+    const container = document.getElementById('icons-selector-curso-cadastro');
+    const input = document.getElementById('novo-curso-icone');
+    if (!container || !input) return; // proteção extra
+    initIconsSelector('icons-selector-curso-cadastro', 'novo-curso-icone');
+    initColorsSelector('colors-selector-curso-cadastro', 'novo-curso-cor');
+}
+
+// 3. Atualização da lista de conquistas cadastradas
+function updateConquistasList() {
+    const container = document.getElementById('conquistas-list');
+    container.innerHTML = '';
+    conquistasCadastradas.forEach((c, i) => {
+        const div = document.createElement('div');
+        div.className = 'card';
+        div.innerHTML = `
+            <div class="card-content">
+                <div class="avatar"><i class="${c.icone}"></i></div>
+                <div><div class="name">${c.nome}</div><div class="points">${c.descricao}</div></div>
+            </div>
+            <div class="card-buttons">
+                <button onclick="editConquistaCadastrada(${i})">Editar</button>
+                <button onclick="deleteConquistaCadastrada(${i})">Excluir</button>
+            </div>`;
+        container.appendChild(div);
+    });
+}
+
+// 4. Atualização da lista de cursos cadastrados
+function updateCursosList() {
+    const container = document.getElementById('cursos-list');
+    container.innerHTML = '';
+    cursosCadastrados.forEach((c, i) => {
+        const div = document.createElement('div');
+        div.className = 'card';
+        div.innerHTML = `
+            <div class="card-content">
+                <div class="avatar"><i class="${c.icone}"></i></div>
+                <div><div class="name">${c.nome}</div><div class="points">${c.descricao}</div></div>
+            </div>
+            <div class="card-buttons">
+                <button onclick="editCursoCadastrado(${i})">Editar</button>
+                <button onclick="deleteCursoCadastrado(${i})">Excluir</button>
+            </div>`;
+        container.appendChild(div);
+    });
+}
+
+// 5. Preenchimento do <select> de conquistas (adicionar)
+function updateConquistaSelect() {
+    const sel = document.getElementById('conquista-select');
+    sel.innerHTML = '<option value="">Selecione uma conquista</option>';
+    conquistasCadastradas.forEach((c, i) => {
+        const opt = document.createElement('option');
+        opt.value = i;
+        opt.textContent = c.nome;
+        sel.appendChild(opt);
+    });
+    updateConquistaSelectPreview();
+}
+function updateConquistaSelectPreview() {
+    const idx = document.getElementById('conquista-select').value;
+    const preview = document.getElementById('conquista-select-preview');
+    if (idx === '') { preview.innerHTML = ''; return; }
+    const c = conquistasCadastradas[idx];
+    preview.innerHTML = `
+        <h3>Prévia</h3>
+        <div class="achievement-preview-card" style="background:linear-gradient(to bottom,${c.cor},${c.cor});color:${isDarkColor(c.cor)?'#fff':'#000'}">
+            <i class="${c.icone} achievement-icon"></i> ${c.nome}
+            <span class="achievement-description">${c.descricao}</span>
+        </div>`;
+}
+
+// 6. Preenchimento do <select> de cursos (adicionar)
+function updateCursoSelect() {
+    const sel = document.getElementById('curso-select');
+    sel.innerHTML = '<option value="">Selecione um curso</option>';
+    cursosCadastrados.forEach((c, i) => {
+        const opt = document.createElement('option');
+        opt.value = i;
+        opt.textContent = c.nome;
+        sel.appendChild(opt);
+    });
+    updateCursoSelectPreview();
+}
+function updateCursoSelectPreview() {
+    const idx = document.getElementById('curso-select').value;
+    const preview = document.getElementById('curso-select-preview');
+    if (idx === '') { preview.innerHTML = ''; return; }
+    const c = cursosCadastrados[idx];
+    const nota = document.getElementById('nota-curso').value;
+    const titulo = nota ? `${c.nome} (${nota})` : c.nome;
+    preview.innerHTML = `
+        <h3>Prévia</h3>
+        <div class="achievement-preview-card" style="background:linear-gradient(to bottom,${c.cor},${c.cor});color:${isDarkColor(c.cor)?'#fff':'#000'}">
+            <i class="${c.icone} achievement-icon"></i> ${titulo}
+            <span class="achievement-description">${c.descricao}</span>
+        </div>`;
+}
+
+// 7. Edição/Exclusão de conquistas cadastradas
+function editConquistaCadastrada(idx) {
+    const c = conquistasCadastradas[idx];
+    const novoNome = prompt('Nome:', c.nome);
+    const novaDesc = prompt('Descrição:', c.descricao);
+    if (novoNome && novaDesc) {
+        conquistasCadastradas[idx].nome = novoNome;
+        conquistasCadastradas[idx].descricao = novaDesc;
+        saveData();
+        updateConquistasList();
+        updateConquistaSelect();
+    }
+}
+function deleteConquistaCadastrada(idx) {
+    if (confirm('Excluir conquista?')) {
+        conquistasCadastradas.splice(idx, 1);
+        saveData();
+        updateConquistasList();
+        updateConquistaSelect();
+    }
+}
+
+// 8. Edição/Exclusão de cursos cadastrados
+function editCursoCadastrado(idx) {
+    const c = cursosCadastrados[idx];
+    const novoNome = prompt('Nome:', c.nome);
+    const novaDesc = prompt('Descrição:', c.descricao);
+    if (novoNome && novaDesc) {
+        cursosCadastrados[idx].nome = novoNome;
+        cursosCadastrados[idx].descricao = novaDesc;
+        saveData();
+        updateCursosList();
+        updateCursoSelect();
+    }
+}
+function deleteCursoCadastrado(idx) {
+    if (confirm('Excluir curso?')) {
+        cursosCadastrados.splice(idx, 1);
+        saveData();
+        updateCursosList();
+        updateCursoSelect();
+    }
+}
 
     init();
     </script>
