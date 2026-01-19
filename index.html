@@ -686,6 +686,12 @@
                 </select>
             </div>
             <div class="filter">
+                <label>Visualizar por Campanha: </label>
+                <select id="filtro-campanha" onchange="updateRanking()">
+                    <option value="geral">Geral</option>
+                </select>
+            </div>
+            <div class="filter">
                 <label>Visualizar por Ano: </label>
                 <select id="filtro-ano" onchange="updateMesFilter()">
                     <option value="todos">Todos</option>
@@ -725,6 +731,7 @@
             <button class="sub-tab-button" onclick="openSubTab('cadastro-unidades')">Unidades</button>
             <button class="sub-tab-button" onclick="openSubTab('cadastro-conquistas')">Conquistas</button>
         <button class="sub-tab-button" onclick="openSubTab('cadastro-cursos')">Cursos</button>
+        <button class="sub-tab-button" onclick="openSubTab('cadastro-campanhas')">Campanhas</button>
         </div>
 
         <div id="cadastro-colaboradores" class="sub-tab-content active">
@@ -806,6 +813,18 @@
         <h2 class="center">Cursos Cadastrados</h2>
         <div id="cursos-list" class="cargos-list"></div>
     </div>
+
+    <!-- CADASTRO DE CAMPANHAS -->
+    <div id="cadastro-campanhas" class="sub-tab-content">
+        <div class="frame">
+            <form id="campanha-form" class="cadastro-form">
+                <input type="text" id="nova-campanha-nome" placeholder="Nome da Campanha" required>
+                <button type="submit">Adicionar Campanha</button>
+            </form>
+        </div>
+        <h2 class="center">Campanhas Cadastradas</h2>
+        <div id="campanhas-list" class="cargos-list"></div>
+    </div>
 </div>
 
     <div id="adicionar" class="tab-content">
@@ -822,6 +841,9 @@
                 <select id="colaborador-pontos" required></select>
                 <input type="text" id="legenda-pontos" placeholder="Legenda" required>
                 <input type="number" id="pontos-add" placeholder="Pontos a adicionar (pode ser negativo)" required>
+                <select id="campanha-pontos" required>
+                    <option value="">Selecione uma campanha</option>
+                </select>
                 <button type="submit">Adicionar Pontos</button>
             </form>
             <center>
@@ -853,6 +875,9 @@
             <form id="add-cursos-form">
                 <select id="colaborador-cursos" required onchange="updateHistoricoCursos()"></select>
                 <select id="curso-select" required onchange="updateCursoSelectPreview()"></select>
+                <select id="campanha-cursos" required>
+                    <option value="">Selecione uma campanha</option>
+                </select>
                 <div class="nota-container">
                     <input type="number" id="nota-curso" placeholder="Nota da Avaliação (0-10)" min="0" max="10" step="0.1">
                     <label style="margin-left: 20px;">Pontuar: <input type="checkbox" id="pontuar-curso" checked></label>
@@ -873,6 +898,9 @@
             <form id="add-nota-form">
                 <select id="colaborador-nota" required onchange="updateHistoricoNotas()"></select>
                 <input type="text" id="curso-nota" placeholder="Curso" required>
+                <select id="campanha-nota" required>
+                    <option value="">Selecione uma campanha</option>
+                </select>
                 <div class="nota-container">
                     <input type="number" id="nota-add" placeholder="Nota da Prova (0-10)" min="0" max="10" step="0.1" required>
                     <label style="margin-left: 20px;">Pontuar: <input type="checkbox" id="pontuar-nota" checked></label>
@@ -952,6 +980,9 @@
                 <input type="hidden" id="edit-historico-tipo">
                 <input type="text" id="edit-historico-descricao" placeholder="Descrição" required>
                 <input type="number" id="edit-historico-valor" placeholder="Valor" required>
+                <select id="edit-historico-campanha" required>
+                    <option value="">Selecione uma campanha</option>
+                </select>
                 <button type="submit">Salvar</button>
             </form>
         </div>
@@ -1018,6 +1049,7 @@
         let colaboradores = [];
         let cargos = new Set([]);
         let unidades = new Set([]);
+        let campanhas = new Set([]);
         let tempCargos = [];
         let tempCargosEdit = [];
         let isAuthenticated = false;
@@ -1090,6 +1122,7 @@
                 colaboradores,
                 cargos: [...cargos],
                 unidades: [...unidades],
+                campanhas: [...campanhas],
                 conquistasCadastradas,
                 cursosCadastrados
             })
@@ -1240,10 +1273,12 @@
                 updateColaboradoresList();
                 updateCargosList();
                 updateUnidadesList();
+                updateCampanhasSelects(); // Adiciona esta linha para carregar campanhas ao abrir aba Cadastro
             }
             if (tabName === 'adicionar') {
                 openSubTab('add-pontos');
                 updateColaboradoresSelects();
+                updateCampanhasSelects(); // Adiciona esta linha para carregar campanhas ao abrir aba Adicionar
             }
         }
 
@@ -1253,15 +1288,16 @@
     document.getElementById(subTabName).classList.add('active');
     document.querySelector(`[onclick="openSubTab('${subTabName}')"]`).classList.add('active');
 
-    if (subTabName === 'add-pontos') updateHistoricoPontos();
+    if (subTabName === 'add-pontos') { updateHistoricoPontos(); updateCampanhasSelects(); }
     if (subTabName === 'add-conquista') { updateConquistaSelect(); updateHistoricoConquistas(); }
-    if (subTabName === 'add-cursos') { updateCursoSelect(); updateHistoricoCursos(); }
-    if (subTabName === 'add-nota') updateHistoricoNotas();
+    if (subTabName === 'add-cursos') { updateCursoSelect(); updateHistoricoCursos(); updateCampanhasSelects(); }
+    if (subTabName === 'add-nota') { updateHistoricoNotas(); updateCampanhasSelects(); }
     if (subTabName === 'cadastro-colaboradores') updateColaboradoresList();
     if (subTabName === 'cadastro-cargos') updateCargosList();
     if (subTabName === 'cadastro-unidades') updateUnidadesList();
     if (subTabName === 'cadastro-conquistas') { initConquistaCadastroSelectors(); updateConquistasList(); }
     if (subTabName === 'cadastro-cursos') { initCursoCadastroSelectors(); updateCursosList(); }
+    if (subTabName === 'cadastro-campanhas') { updateCampanhasList(); updateCampanhasSelects(); }
     if (subTabName === 'cadastro-conquistas') {
         initConquistaCadastroSelectors();   // cria ícones + cores
         updateConquistasList();
@@ -1340,6 +1376,16 @@ function updateFilters() {
         option.value = unidade;
         option.textContent = unidade;
         unidadeSelect.appendChild(option);
+    });
+
+    const campanhaSelect = document.getElementById('filtro-campanha');
+    campanhaSelect.innerHTML = '<option value="geral">Geral</option>';
+    // Ordenar campanhas em ordem alfabética
+    [...campanhas].sort((a, b) => a.localeCompare(b)).forEach(campanha => {
+        const option = document.createElement('option');
+        option.value = campanha;
+        option.textContent = campanha;
+        campanhaSelect.appendChild(option);
     });
 
     const cargoInput = document.getElementById('cargo');
@@ -1461,6 +1507,7 @@ function calculateNotaMedia(notas) {
 function getFilteredColaboradores() {
     const filtroCargo = document.getElementById('filtro-cargo').value;
     const filtroUnidade = document.getElementById('filtro-unidade').value;
+    const filtroCampanha = document.getElementById('filtro-campanha').value;
     const filtroAno = document.getElementById('filtro-ano').value;
     const filtroMes = document.getElementById('filtro-mes').value;
 
@@ -1475,15 +1522,20 @@ function getFilteredColaboradores() {
         const cloned = {
             ...col,
             pontos: 0,
-            notas: [],
+            notas: [...col.notas], // ✅ mantém TODAS as notas, independentemente da campanha
             historico: [],
-            conquistas: [...col.conquistas], // ✅ mantém TODAS as conquistas, independentemente do filtro de tempo
-            cursos: [],
+            conquistas: [...col.conquistas], // ✅ mantém TODAS as conquistas, independentemente da campanha
+            cursos: [...col.cursos], // ✅ mantém TODOS os cursos, independentemente da campanha
             ultimaConclusaoCurso: null
         };
 
         col.historico.forEach(entry => {
             let incluir = false;
+
+            // Verificar filtro de campanha (apenas para pontos, não para outros dados)
+            if (filtroCampanha !== 'geral' && entry.tipo === 'pontos' && entry.campanha !== filtroCampanha) {
+                return; // Pular esta entrada se não for da campanha selecionada (apenas pontos)
+            }
 
             if (filtroAno === 'todos') {
                 incluir = true;
@@ -1513,12 +1565,10 @@ function getFilteredColaboradores() {
                 cloned.historico.push(entryCompleta);
 
                 if (entry.tipo === 'pontos') cloned.pontos += entry.valor;
-                if (entry.tipo === 'nota') cloned.notas.push(entry.valor);
 
                 if (entry.tipo === 'curso') {
                     const curso = col.cursos.find(c => c.nome === entry.valor);
                     if (curso) {
-                        cloned.cursos.push(curso);
                         if (!cloned.ultimaConclusaoCurso || entryCompleta.timestamp > cloned.ultimaConclusaoCurso) {
                             cloned.ultimaConclusaoCurso = entryCompleta.timestamp;
                         }
@@ -1747,7 +1797,10 @@ function openEditModal(colId) {
                         col.historico.findIndex(e => e === entry),
                         entry.tipo,
                         entry.descricao,
-                        entry.valor
+                        entry.valor,
+                        entry.data,
+                        entry.hora,
+                        entry.campanha
                     );
                 li.appendChild(editBtn);
             }
@@ -1795,7 +1848,7 @@ function openEditModal(colId) {
     if (oldData) oldData.remove();
     if (oldHora) oldHora.remove();
 
-    // Cria campos de data e hora
+    // Cria campos de data e hora - manter valores existentes
     const dataInput = document.createElement('input');
     dataInput.type = 'date';
     dataInput.id = 'edit-conquista-data';
@@ -1806,7 +1859,7 @@ function openEditModal(colId) {
     horaInput.id = 'edit-conquista-hora';
     horaInput.required = true;
 
-    // Preenche com data/hora do histórico ou atual
+    // Preenche com data/hora do histórico ou atual (mas mantendo o original se existir)
     if (historicoEntry) {
         const [dia, mes, ano] = historicoEntry.data.split('/').map(Number);
         dataInput.value = `${ano}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
@@ -1866,7 +1919,7 @@ function closeEditConquistaModal() {
     if (oldData) oldData.remove();
     if (oldHora) oldHora.remove();
 
-    // Cria campos
+    // Cria campos - manter valores existentes
     const dataInput = document.createElement('input');
     dataInput.type = 'date';
     dataInput.id = 'edit-curso-data';
@@ -1877,7 +1930,7 @@ function closeEditConquistaModal() {
     horaInput.id = 'edit-curso-hora';
     horaInput.required = true;
 
-    // Preenche com data/hora
+    // Preenche com data/hora do histórico ou atual (mas mantendo o original se existir)
     if (historicoEntry) {
         const [dia, mes, ano] = historicoEntry.data.split('/').map(Number);
         dataInput.value = `${ano}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
@@ -1914,14 +1967,25 @@ function closeEditCursoModal() {
     if (horaInput) horaInput.remove();
     updateHistoricoCursos();
 }
-        function openEditHistoricoModal(colId, idx, tipo, descricao, valor, data = null, hora = null) {
+        function openEditHistoricoModal(colId, idx, tipo, descricao, valor, data = null, hora = null, campanha = null) {
     document.getElementById('edit-historico-col-id').value = colId;
     document.getElementById('edit-historico-idx').value = idx;
     document.getElementById('edit-historico-tipo').value = tipo;
     document.getElementById('edit-historico-descricao').value = descricao;
     document.getElementById('edit-historico-valor').value = valor;
 
-    // Campos de data e hora
+    // Preencher o select de campanhas
+    const campanhaSelect = document.getElementById('edit-historico-campanha');
+    campanhaSelect.innerHTML = '<option value="">Selecione uma campanha</option>';
+    [...campanhas].sort((a, b) => a.localeCompare(b)).forEach(camp => {
+        const option = document.createElement('option');
+        option.value = camp;
+        option.textContent = camp;
+        if (campanha === camp) option.selected = true;
+        campanhaSelect.appendChild(option);
+    });
+
+    // Campos de data e hora - manter valores existentes, não resetar
     const dataInput = document.createElement('input');
     dataInput.type = 'date';
     dataInput.id = 'edit-historico-data';
@@ -1945,8 +2009,8 @@ function closeEditCursoModal() {
 }
 
         function closeEditHistoricoModal() {
-            document.getElementById('edit-historico-modal').style.display = 'none';
-        }
+    document.getElementById('edit-historico-modal').style.display = 'none';
+}
 
         function removeConquista(colId, idx) {
             const col = colaboradores.find(c => c.id === colId);
@@ -2074,9 +2138,14 @@ function editCurso() {
     const entry = col.historico[idx];
     const dataInput = document.getElementById('edit-historico-data').value;
     const horaInput = document.getElementById('edit-historico-hora').value;
+    const campanhaInput = document.getElementById('edit-historico-campanha').value;
 
     if (!dataInput || !horaInput) {
         alert('Preencha data e hora!');
+        return;
+    }
+    if (!campanhaInput) {
+        alert('Selecione uma campanha!');
         return;
     }
 
@@ -2096,14 +2165,24 @@ function editCurso() {
         if (notaIdx !== -1) col.notas[notaIdx] = novoValorNum;
     }
 
-    // Atualiza entrada
+    // Atualiza entrada - mantém a data/hora original se não foi alterada
+    const dataOriginal = new Date(entry.timestamp);
+    const dataAlterada = new Date(`${dataInput}T${horaInput}:00`);
+    
+    // Verifica se a data foi realmente alterada (comparando timestamps)
+    const dataFoiAlterada = dataOriginal.getTime() !== dataAlterada.getTime();
+    
+    if (dataFoiAlterada) {
+        entry.data = novaDataHora.toLocaleDateString('pt-BR');
+        entry.hora = novaDataHora.toTimeString().slice(0,5);
+        entry.timestamp = novaDataHora.getTime();
+    }
+    
     entry.valor = novoValorNum;
     entry.descricao = novaDescricao;
-    entry.data = novaDataHora.toLocaleDateString('pt-BR');
-    entry.hora = novaDataHora.toTimeString().slice(0,5);
-    entry.timestamp = novaDataHora.getTime();
+    entry.campanha = campanhaInput;
 
-    saveData({ colaboradores, cargos: [...cargos], unidades: [...unidades] });
+    saveData({ colaboradores, cargos: [...cargos], unidades: [...unidades], campanhas: [...campanhas] });
     closeEditHistoricoModal();
     openEditModal(colId);
 }
@@ -2224,6 +2303,7 @@ async function init() {
     colaboradores = data.colaboradores || [];
     cargos = new Set(data.cargos || []);
     unidades = new Set(data.unidades || []);
+    campanhas = new Set(data.campanhas || []);
     conquistasCadastradas = data.conquistasCadastradas || [];   // novo
     cursosCadastrados    = data.cursosCadastrados || [];       // novo
 
@@ -2245,7 +2325,7 @@ async function init() {
     });
 
     // Salvar dados atualizados
-    await saveData({ colaboradores, cargos: [...cargos], unidades: [...unidades] });
+    await saveData({ colaboradores, cargos: [...cargos], unidades: [...unidades], campanhas: [...campanhas] });
 
     updateAnoFilter();
     updateFilters();
@@ -2321,6 +2401,7 @@ async function init() {
     const colId = colaboradorSelect.value;
     const legenda = document.getElementById('legenda-pontos').value.trim();
     const pontos = parseInt(document.getElementById('pontos-add').value);
+    const campanha = document.getElementById('campanha-pontos').value;
     const dataInput = document.getElementById('data-pontos').value;
     const horaInput = document.getElementById('hora-pontos').value || '00:00';
 
@@ -2330,6 +2411,10 @@ async function init() {
     }
     if (!colId || colId === '') {
         alert('Selecione um colaborador ou "SELECIONAR TODOS"!');
+        return;
+    }
+    if (!campanha) {
+        alert('Selecione uma campanha!');
         return;
     }
     if (!dataInput) {
@@ -2347,18 +2432,18 @@ async function init() {
 
         colaboradores.forEach(col => {
             col.pontos += pontos;
-            col.historico.push(criarEntradaHistorico('pontos', pontos, descricaoBase, dataHora));
+            col.historico.push(criarEntradaHistorico('pontos', pontos, descricaoBase, dataHora, campanha));
         });
         alert(`Pontos aplicados a todos!`);
     } else {
         const col = colaboradores.find(c => c.id == colId);
         if (col) {
             col.pontos += pontos;
-            col.historico.push(criarEntradaHistorico('pontos', pontos, descricaoBase, dataHora));
+            col.historico.push(criarEntradaHistorico('pontos', pontos, descricaoBase, dataHora, campanha));
         }
     }
 
-    await saveData({ colaboradores, cargos: [...cargos], unidades: [...unidades] });
+    await saveData({ colaboradores, cargos: [...cargos], unidades: [...unidades], campanhas: [...campanhas] });
     document.getElementById('add-pontos-form').reset();
     colaboradorSelect.selectedIndex = 0;
     const agora = new Date();
@@ -2410,6 +2495,7 @@ document.getElementById('add-cursos-form').addEventListener('submit', async (e) 
     const cursoSelect = document.getElementById('curso-select');
     const cursoIdx = cursoSelect.value;  // <-- CORRETO: usa o VALUE do <option>
     const curso = cursosCadastrados[cursoIdx];
+    const campanha = document.getElementById('campanha-cursos').value;
 
     const notaInput = document.getElementById('nota-curso').value.trim();
     const notaValor = notaInput === '' ? null : parseFloat(notaInput);
@@ -2420,6 +2506,10 @@ document.getElementById('add-cursos-form').addEventListener('submit', async (e) 
     // === VALIDAÇÃO MELHORADA ===
     if (!colId || cursoIdx === "" || !curso || !dataInput) {
         alert('Preencha colaborador, curso e data!');
+        return;
+    }
+    if (!campanha) {
+        alert('Selecione uma campanha!');
         return;
     }
     if (notaValor !== null && (isNaN(notaValor) || notaValor < 0 || notaValor > 10)) {
@@ -2434,19 +2524,19 @@ document.getElementById('add-cursos-form').addEventListener('submit', async (e) 
     // === Adiciona o curso ===
     col.cursos.push({ ...curso });
     col.historico.push(criarEntradaHistorico('curso', curso.nome,
-        `Curso: "${curso.nome}"`, dataHora));
+        `Curso: "${curso.nome}"`, dataHora, campanha));
 
     // === Nota e pontuação (se preenchida) ===
     if (notaValor !== null) {
         col.notas.push(notaValor);
         col.historico.push(criarEntradaHistorico('nota', notaValor,
-            `Nota ${notaValor} no curso: "${curso.nome}"`, dataHora));
+            `Nota ${notaValor} no curso: "${curso.nome}"`, dataHora, campanha));
 
         if (pontuar) {
             const pontos = notaValor * 10;
             col.pontos += pontos;
             col.historico.push(criarEntradaHistorico('pontos', pontos,
-                `Ganhou ${pontos} pontos pela nota ${notaValor} no curso: "${curso.nome}"`, dataHora));
+                `Ganhou ${pontos} pontos pela nota ${notaValor} no curso: "${curso.nome}"`, dataHora, campanha));
         }
     }
 
@@ -2469,6 +2559,7 @@ document.getElementById('add-nota-form').addEventListener('submit', async (e) =>
     e.preventDefault();
     const colId = parseInt(document.getElementById('colaborador-nota').value);
     const curso = document.getElementById('curso-nota').value.trim();
+    const campanha = document.getElementById('campanha-nota').value;
     const nota = parseFloat(document.getElementById('nota-add').value);
     const pontuar = document.getElementById('pontuar-nota').checked;
     const dataInput = document.getElementById('data-nota').value;
@@ -2478,18 +2569,22 @@ document.getElementById('add-nota-form').addEventListener('submit', async (e) =>
         alert('Preencha todos os campos corretamente, incluindo data!');
         return;
     }
+    if (!campanha) {
+        alert('Selecione uma campanha!');
+        return;
+    }
 
     const dataHora = new Date(`${dataInput}T${horaInput}:00`);
     const col = colaboradores.find(c => c.id === colId);
     if (col) {
         col.notas.push(nota);
-        col.historico.push(criarEntradaHistorico('nota', nota, `Nota ${nota} no curso "${curso}"`, dataHora));
+        col.historico.push(criarEntradaHistorico('nota', nota, `Nota ${nota} no curso "${curso}"`, dataHora, campanha));
         if (pontuar) {
             const pontos = nota * 10;
             col.pontos += pontos;
-            col.historico.push(criarEntradaHistorico('pontos', pontos, `Ganhou ${pontos} pontos pela nota ${nota} no curso "${curso}"`, dataHora));
+            col.historico.push(criarEntradaHistorico('pontos', pontos, `Ganhou ${pontos} pontos pela nota ${nota} no curso "${curso}"`, dataHora, campanha));
         }
-        await saveData({ colaboradores, cargos: [...cargos], unidades: [...unidades] });
+        await saveData({ colaboradores, cargos: [...cargos], unidades: [...unidades], campanhas: [...campanhas] });
         document.getElementById('add-nota-form').reset();
         document.getElementById('pontuar-nota').checked = true;
         const agora = new Date();
@@ -2586,7 +2681,7 @@ document.getElementById('colaborador-cursos').addEventListener('change', () => {
                 div.innerHTML = `<span>${entry.descricao}</span>`;
                 const editBtn = document.createElement('button');
                 editBtn.textContent = 'Editar';
-                editBtn.onclick = () => openEditHistoricoModal(col.id, col.historico.findIndex(e => e === entry), 'pontos', entry.descricao, entry.valor);
+                editBtn.onclick = () => openEditHistoricoModal(col.id, col.historico.findIndex(e => e === entry), 'pontos', entry.descricao, entry.valor, entry.data, entry.hora, entry.campanha);
                 div.appendChild(editBtn);
                 const removeBtn = document.createElement('button');
                 removeBtn.textContent = 'Remover';
@@ -2700,7 +2795,7 @@ function updateHistoricoNotas() {
                 div.innerHTML = `<span>${entry.descricao}</span>`;
                 const editBtn = document.createElement('button');
                 editBtn.textContent = 'Editar';
-                editBtn.onclick = () => openEditHistoricoModal(col.id, col.historico.findIndex(e => e === entry), 'nota', entry.descricao, entry.valor);
+                editBtn.onclick = () => openEditHistoricoModal(col.id, col.historico.findIndex(e => e === entry), 'nota', entry.descricao, entry.valor, entry.data, entry.hora, entry.campanha);
                 div.appendChild(editBtn);
                 const removeBtn = document.createElement('button');
                 removeBtn.textContent = 'Remover';
@@ -2903,7 +2998,7 @@ function updateCursosNotaSelect() {
         });
 
 // Substitua a criação de qualquer item no histórico por esta função:
-function criarEntradaHistorico(tipo, valor, descricao, data = null) {
+function criarEntradaHistorico(tipo, valor, descricao, data = null, campanha = null) {
     const agora = new Date();
     const dataHora = data 
         ? new Date(data) 
@@ -2913,6 +3008,7 @@ function criarEntradaHistorico(tipo, valor, descricao, data = null) {
         tipo,
         valor,
         descricao,
+        campanha,
         data: dataHora.toLocaleDateString('pt-BR'),
         hora: dataHora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
         timestamp: dataHora.getTime()  // Para ordenação precisa
@@ -2969,6 +3065,28 @@ document.getElementById('curso-form').addEventListener('submit', async (e) => {
     document.getElementById('colors-selector-curso-cadastro').style.display = 'none';
     updateCursosList();
     updateCursoSelect();
+});
+
+document.getElementById('campanha-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const nome = document.getElementById('nova-campanha-nome').value.trim();
+    
+    if (!nome) { 
+        alert('Preencha o nome da campanha!'); 
+        return; 
+    }
+
+    if (campanhas.has(nome)) {
+        alert('Esta campanha já existe!');
+        return;
+    }
+
+    campanhas.add(nome);
+    await saveData();
+    document.getElementById('campanha-form').reset();
+    updateCampanhasList();
+    updateCampanhasSelects();
+    updateFilters();
 });
 
 // 1. Seletores de cadastro (conquista)
@@ -3136,6 +3254,71 @@ function deleteCursoCadastrado(idx) {
         saveData();
         updateCursosList();
         updateCursoSelect();
+    }
+}
+
+// 9. Funções para gerenciar campanhas
+function updateCampanhasList() {
+    const list = document.getElementById('campanhas-list');
+    list.innerHTML = '';
+    [...campanhas].forEach(campanha => {
+        const card = document.createElement('div');
+        card.classList.add('card');
+        card.innerHTML = `
+            <div class="card-content">
+                <div class="name">${campanha}</div>
+            </div>
+            <div class="card-buttons">
+                <button onclick="editCampanha('${campanha}')">Editar</button>
+                <button onclick="deleteCampanha('${campanha}')">Excluir</button>
+            </div>
+        `;
+        list.appendChild(card);
+    });
+}
+
+function updateCampanhasSelects() {
+    const selects = [
+        document.getElementById('campanha-pontos'),
+        document.getElementById('campanha-cursos'),
+        document.getElementById('campanha-nota')
+    ];
+
+    selects.forEach(select => {
+        if (select) {
+            select.innerHTML = '<option value="">Selecione uma campanha</option>';
+            [...campanhas].sort((a, b) => a.localeCompare(b)).forEach(campanha => {
+                const option = document.createElement('option');
+                option.value = campanha;
+                option.textContent = campanha;
+                select.appendChild(option);
+            });
+        }
+    });
+}
+
+function editCampanha(campanha) {
+    const novaCampanha = prompt('Editar campanha:', campanha);
+    if (novaCampanha && novaCampanha !== campanha) {
+        campanhas.delete(campanha);
+        campanhas.add(novaCampanha);
+        saveData();
+        updateCampanhasList();
+        updateCampanhasSelects();
+        updateFilters();
+    }
+}
+
+function deleteCampanha(campanha) {
+    const confirmacao = prompt(`Digite "DELETAR" para confirmar a exclusão da campanha "${campanha}":`);
+    if (confirmacao === 'DELETAR') {
+        campanhas.delete(campanha);
+        saveData();
+        updateCampanhasList();
+        updateCampanhasSelects();
+        updateFilters();
+    } else {
+        alert('Exclusão cancelada. Você deve digitar exatamente "DELETAR".');
     }
 }
 
