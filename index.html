@@ -656,6 +656,15 @@
     margin-bottom: 10px;
     width: 250px;
 }
+    #migrar-campanhas-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    }
+    #migrar-campanhas-btn:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 10px rgba(102, 126, 234, 0.4);
+    }
     </style>
 </head>
 <body>
@@ -829,6 +838,18 @@
 
     <div id="adicionar" class="tab-content">
         <h1 class="center">Adicionar Itens</h1>
+        <div class="center" style="margin-bottom: 20px;">
+            <button id="migrar-campanhas-btn" onclick="migrarRegistrosSemCampanha()" 
+                    style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                           color: white; border: none; padding: 12px 24px; 
+                           border-radius: 25px; cursor: pointer; font-size: 14px; 
+                           font-weight: bold; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+                           transition: all 0.3s ease; display: flex; align-items: center; 
+                           gap: 8px; margin: 0 auto;">
+                <i class="fas fa-sync-alt"></i>
+                Corrigir Campanhas Inválidas
+            </button>
+        </div>
         <div class="sub-tabs">
             <button class="sub-tab-button active" onclick="openSubTab('add-pontos')">Pontos</button>
             <button class="sub-tab-button" onclick="openSubTab('add-conquista')">Conquista</button>
@@ -2324,6 +2345,27 @@ async function init() {
             .reduce((sum, entry) => sum + entry.valor, 0);
     });
 
+    // Migrar registros antigos sem campanha para a primeira campanha cadastrada
+    if (campanhas.size > 0) {
+        const primeiraCampanha = [...campanhas].sort((a, b) => a.localeCompare(b))[0];
+        let registrosMigrados = 0;
+        
+        colaboradores.forEach(col => {
+            if (col.historico) {
+                col.historico.forEach(entry => {
+                    if (!entry.campanha && (entry.tipo === 'pontos' || entry.tipo === 'curso' || entry.tipo === 'nota')) {
+                        entry.campanha = primeiraCampanha;
+                        registrosMigrados++;
+                    }
+                });
+            }
+        });
+        
+        if (registrosMigrados > 0) {
+            console.log(`Migrados ${registrosMigrados} registros para a campanha: ${primeiraCampanha}`);
+        }
+    }
+
     // Salvar dados atualizados
     await saveData({ colaboradores, cargos: [...cargos], unidades: [...unidades], campanhas: [...campanhas] });
 
@@ -3319,6 +3361,88 @@ function deleteCampanha(campanha) {
         updateFilters();
     } else {
         alert('Exclusão cancelada. Você deve digitar exatamente "DELETAR".');
+    }
+}
+
+async function migrarRegistrosSemCampanha() {
+    if (campanhas.size === 0) {
+        alert('Nenhuma campanha cadastrada! Cadastre uma campanha primeiro.');
+        return;
+    }
+
+    const primeiraCampanha = [...campanhas].sort((a, b) => a.localeCompare(b))[0];
+    const campanhasValidas = new Set([...campanhas]);
+    
+    let registrosMigrados = 0;
+    let detalhesMigracao = {};
+    let tiposCorrecao = { semCampanha: 0, campanhaInvalida: 0 };
+    
+    colaboradores.forEach(col => {
+        if (col.historico) {
+            col.historico.forEach(entry => {
+                // Verifica se é um tipo de registro que deve ter campanha
+                if (entry.tipo === 'pontos' || entry.tipo === 'curso' || entry.tipo === 'nota') {
+                    let precisaMigrar = false;
+                    let motivo = '';
+                    
+                    // Caso 1: Não tem campanha
+                    if (!entry.campanha) {
+                        precisaMigrar = true;
+                        motivo = 'semCampanha';
+                        tiposCorrecao.semCampanha++;
+                    }
+                    // Caso 2: Tem campanha mas não está na lista de campanhas válidas
+                    else if (!campanhasValidas.has(entry.campanha)) {
+                        precisaMigrar = true;
+                        motivo = 'campanhaInvalida';
+                        tiposCorrecao.campanhaInvalida++;
+                    }
+                    
+                    if (precisaMigrar) {
+                        const campanhaAntiga = entry.campanha || '(sem campanha)';
+                        entry.campanha = primeiraCampanha;
+                        registrosMigrados++;
+                        
+                        if (!detalhesMigracao[col.nome]) {
+                            detalhesMigracao[col.nome] = { total: 0, detalhes: [] };
+                        }
+                        detalhesMigracao[col.nome].total++;
+                        detalhesMigracao[col.nome].detalhes.push(`${campanhaAntiga} → ${primeiraCampanha}`);
+                    }
+                }
+            });
+        }
+    });
+
+    if (registrosMigrados > 0) {
+        const confirmacao = confirm(`Deseja migrar ${registrosMigrados} registros para "${primeiraCampanha}"?\n\n` +
+            `• ${tiposCorrecao.semCampanha} registros sem campanha\n` +
+            `• ${tiposCorrecao.campanhaInvalida} registros com campanhas inválidas\n\n` +
+            `Esta ação não pode ser desfeita.`);
+        
+        if (!confirmacao) return;
+        
+        await saveData({ colaboradores, cargos: [...cargos], unidades: [...unidades], campanhas: [...campanhas] });
+        
+        let mensagem = `✅ Migração concluída com sucesso!\n\n`;
+        mensagem += `Total de registros migrados: ${registrosMigrados}\n`;
+        mensagem += `Campanha de destino: ${primeiraCampanha}\n\n`;
+        mensagem += `Tipos de correção:\n`;
+        mensagem += `• Registros sem campanha: ${tiposCorrecao.semCampanha}\n`;
+        mensagem += `• Registros com campanhas inválidas: ${tiposCorrecao.campanhaInvalida}\n\n`;
+        mensagem += `Detalhes por colaborador:\n`;
+        
+        Object.entries(detalhesMigracao).forEach(([nome, dados]) => {
+            mensagem += `• ${nome}: ${dados.total} registros\n`;
+        });
+        
+        alert(mensagem);
+        
+        // Atualizar as listas suspensas de campanha
+        updateCampanhasSelects();
+        updateFilters();
+    } else {
+        alert('ℹ️ Nenhum registro encontrado para migrar. Todos os registros já possuem campanhas válidas associadas.');
     }
 }
 
