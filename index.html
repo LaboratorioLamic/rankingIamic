@@ -192,6 +192,34 @@
             gap: 20px;
             animation: slideIn 0.5s ease-out forwards;
         }
+        .ranking-placeholder {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 12px;
+            padding: 40px 20px;
+            margin: 20px auto;
+        }
+        .ranking-placeholder .placeholder-card {
+            background: linear-gradient(135deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+            border: 1px solid rgba(221,230,237,0.08);
+            padding: 30px 40px;
+            border-radius: 14px;    
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+            max-width: 720px;
+            color: #E6F0FA;
+        }
+        .ranking-placeholder .placeholder-card h3 {
+            margin: 8px 0 4px;
+            font-size: 22px;
+            color: #FFFFFF;
+        }
+        .ranking-placeholder .placeholder-card p {
+            margin: 0;
+            color: #C9D7E6;
+        }
         .card {
             background: linear-gradient(to bottom, #3A5A7D, #2E3A59);
             border-radius: 10px;
@@ -683,6 +711,12 @@
         <h1 class="center">Ranking de Pontos</h1>
         <div class="filters">
             <div class="filter">
+                <label>Selecionar Campanha: </label>
+                <select id="filtro-campanha" onchange="updateRanking()">
+                    <option value="">Selecione uma campanha</option>
+                </select>
+            </div>
+            <div class="filter">
                 <label>Visualizar por Cargo: </label>
                 <select id="filtro-cargo" onchange="updateRanking()">
                     <option value="geral">Geral</option>
@@ -691,12 +725,6 @@
             <div class="filter">
                 <label>Visualizar por Unidade: </label>
                 <select id="filtro-unidade" onchange="updateRanking()">
-                    <option value="geral">Geral</option>
-                </select>
-            </div>
-            <div class="filter">
-                <label>Visualizar por Campanha: </label>
-                <select id="filtro-campanha" onchange="updateRanking()">
                     <option value="geral">Geral</option>
                 </select>
             </div>
@@ -726,6 +754,13 @@
             </div>
         </div>
         <h2 class="leaders-title">Líderes</h2>
+        <div id="ranking-placeholder" class="ranking-placeholder">
+            <div class="placeholder-card">
+                <i class="fas fa-hand-pointer fa-2x"></i>
+                <h3>Selecione uma campanha</h3>
+                <p>Escolha uma campanha para visualizar o ranking correspondente.</p>
+            </div>
+        </div>
         <div class="top-3-frame">
             <div id="top-3" class="top-3"></div>
         </div>
@@ -1400,7 +1435,7 @@ function updateFilters() {
     });
 
     const campanhaSelect = document.getElementById('filtro-campanha');
-    campanhaSelect.innerHTML = '<option value="geral">Geral</option>';
+    campanhaSelect.innerHTML = '<option value="">Selecione uma campanha</option>';
     // Ordenar campanhas em ordem alfabética
     [...campanhas].sort((a, b) => a.localeCompare(b)).forEach(campanha => {
         const option = document.createElement('option');
@@ -1614,9 +1649,19 @@ function getFilteredColaboradores() {
 
 
 function updateRanking() {
-    const filtered = getFilteredColaboradores();
+    const campanhaValue = document.getElementById('filtro-campanha').value;
+    const placeholder = document.getElementById('ranking-placeholder');
     const top3Div = document.getElementById('top-3');
     const restDiv = document.getElementById('rest-ranking');
+    if (!campanhaValue) {
+        if (top3Div) top3Div.innerHTML = '';
+        if (restDiv) restDiv.innerHTML = '';
+        if (placeholder) placeholder.style.display = 'flex';
+        return;
+    } else {
+        if (placeholder) placeholder.style.display = 'none';
+    }
+    const filtered = getFilteredColaboradores();
     top3Div.innerHTML = '';
     restDiv.innerHTML = '';
     filtered.forEach((col, index) => {
@@ -1634,8 +1679,23 @@ function updateRanking() {
             </div>`;
         });
         conquistasHTML += '</div>';
+        
+        // Filtra cursos apenas pela campanha selecionada
+        const filtroCampanha = document.getElementById('filtro-campanha').value;
+        const cursosDaCampanha = [];
+        if (filtroCampanha && Array.isArray(col.historico)) {
+            col.historico.forEach(entry => {
+                if (entry && entry.tipo === 'curso' && entry.campanha === filtroCampanha) {
+                    const curso = col.cursos.find(c => c.nome === entry.valor);
+                    if (curso && !cursosDaCampanha.find(c => c.nome === curso.nome)) {
+                        cursosDaCampanha.push(curso);
+                    }
+                }
+            });
+        }
+        
         let cursosHTML = '<div class="cursos-ranking">';
-        col.cursos.forEach(curso => {
+        cursosDaCampanha.forEach(curso => {
             cursosHTML += `<div class="curso-icon-ranking">
                 <i class="${curso.icone}" style="color: ${curso.cor};"></i>
                 <span class="curso-description">${curso.descricao || curso.nome}</span>
@@ -3256,16 +3316,44 @@ function updateCursoSelectPreview() {
 }
 
 // 7. Edição/Exclusão de conquistas cadastradas
-function editConquistaCadastrada(idx) {
+async function editConquistaCadastrada(idx) {
     const c = conquistasCadastradas[idx];
     const novoNome = prompt('Nome:', c.nome);
     const novaDesc = prompt('Descrição:', c.descricao);
     if (novoNome && novaDesc) {
+        const nomeAnterior = c.nome;
+
+        // Atualiza a conquista no array de cadastrados
         conquistasCadastradas[idx].nome = novoNome;
         conquistasCadastradas[idx].descricao = novaDesc;
-        saveData();
+
+        // Propaga para todos os colaboradores que possuem essa conquista
+        colaboradores.forEach(col => {
+            // Atualiza conquistas do colaborador
+            col.conquistas.forEach(conq => {
+                if (conq.nome === nomeAnterior) {
+                    conq.nome = novoNome;
+                    conq.descricao = novaDesc;
+                }
+            });
+
+            // Atualiza histórico
+            if (Array.isArray(col.historico)) {
+                col.historico.forEach(entry => {
+                    if (entry && entry.tipo === 'conquista' && entry.valor === nomeAnterior) {
+                        entry.valor = novoNome;
+                        entry.descricao = novaDesc;
+                    }
+                });
+            }
+        });
+
+        await saveData();
         updateConquistasList();
         updateConquistaSelect();
+        updateColaboradoresList();
+        updateColaboradoresSelects();
+        updateRanking();
     }
 }
 function deleteConquistaCadastrada(idx) {
@@ -3278,16 +3366,44 @@ function deleteConquistaCadastrada(idx) {
 }
 
 // 8. Edição/Exclusão de cursos cadastrados
-function editCursoCadastrado(idx) {
+async function editCursoCadastrado(idx) {
     const c = cursosCadastrados[idx];
     const novoNome = prompt('Nome:', c.nome);
     const novaDesc = prompt('Descrição:', c.descricao);
     if (novoNome && novaDesc) {
+        const nomeAnterior = c.nome;
+
+        // Atualiza o curso no array de cadastrados
         cursosCadastrados[idx].nome = novoNome;
         cursosCadastrados[idx].descricao = novaDesc;
-        saveData();
+
+        // Propaga para todos os colaboradores que possuem esse curso
+        colaboradores.forEach(col => {
+            // Atualiza cursos do colaborador
+            col.cursos.forEach(curso => {
+                if (curso.nome === nomeAnterior) {
+                    curso.nome = novoNome;
+                    curso.descricao = novaDesc;
+                }
+            });
+
+            // Atualiza histórico
+            if (Array.isArray(col.historico)) {
+                col.historico.forEach(entry => {
+                    if (entry && entry.tipo === 'curso' && entry.valor === nomeAnterior) {
+                        entry.valor = novoNome;
+                        entry.descricao = novaDesc;
+                    }
+                });
+            }
+        });
+
+        await saveData();
         updateCursosList();
         updateCursoSelect();
+        updateColaboradoresList();
+        updateColaboradoresSelects();
+        updateRanking();
     }
 }
 function deleteCursoCadastrado(idx) {
@@ -3339,16 +3455,37 @@ function updateCampanhasSelects() {
     });
 }
 
-function editCampanha(campanha) {
+async function editCampanha(campanha) {
     const novaCampanha = prompt('Editar campanha:', campanha);
-    if (novaCampanha && novaCampanha !== campanha) {
-        campanhas.delete(campanha);
-        campanhas.add(novaCampanha);
-        saveData();
-        updateCampanhasList();
-        updateCampanhasSelects();
-        updateFilters();
+    if (!novaCampanha || novaCampanha === campanha) return;
+
+    // Se já existir campanha com o novo nome, perguntar sobre mesclagem
+    if (campanhas.has(novaCampanha)) {
+        const confirmar = confirm(`A campanha "${novaCampanha}" já existe. Deseja mesclar e atualizar todos os registros para esse nome?`);
+        if (!confirmar) return;
     }
+
+    // Atualiza todos os históricos dos colaboradores que referenciam a campanha antiga
+    colaboradores.forEach(col => {
+        if (!Array.isArray(col.historico)) return;
+        col.historico.forEach(entry => {
+            if (entry && entry.campanha === campanha) {
+                entry.campanha = novaCampanha;
+            }
+        });
+    });
+
+    // Substitui no conjunto de campanhas
+    campanhas.delete(campanha);
+    campanhas.add(novaCampanha);
+
+    await saveData();
+    updateCampanhasList();
+    updateCampanhasSelects();
+    updateFilters();
+    updateColaboradoresList();
+    updateColaboradoresSelects();
+    updateRanking();
 }
 
 function deleteCampanha(campanha) {
