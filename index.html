@@ -1708,10 +1708,23 @@ function updateRanking() {
             </div>`;
         });
         cursosHTML += '</div>';
-        // Exibe a última publicação de curso (mais recente)
-        const ultimaConclusao = col.ultimaConclusaoCurso
-            ? new Date(col.ultimaConclusaoCurso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
-            : 'Nenhum curso';
+        
+        // Exibe a última publicação de curso da campanha selecionada (mais recente)
+        let ultimaConclusao = 'Nenhum curso';
+        if (filtroCampanha && Array.isArray(col.historico)) {
+            const cursosDaCampanhaDatas = col.historico
+                .filter(entry => entry && entry.tipo === 'curso' && entry.campanha === filtroCampanha)
+                .map(entry => {
+                    const [dia, mes, ano] = entry.data.split('/').map(Number);
+                    const [hora, minuto] = (entry.hora || '00:00').split(':').map(Number);
+                    return new Date(ano, mes - 1, dia, hora, minuto).getTime();
+                })
+                .sort((a, b) => b - a);
+            
+            if (cursosDaCampanhaDatas.length > 0) {
+                ultimaConclusao = new Date(cursosDaCampanhaDatas[0]).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+            }
+        }
         card.innerHTML = `
             <div class="card-content">
                 <div class="avatar">${col.nome.charAt(0)}</div>
