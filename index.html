@@ -1651,15 +1651,21 @@ function getFilteredColaboradores() {
 function updateRanking() {
     const campanhaValue = document.getElementById('filtro-campanha').value;
     const placeholder = document.getElementById('ranking-placeholder');
+    const leadersTitle = document.querySelector('.leaders-title');
+    const top3Frame = document.querySelector('.top-3-frame');
     const top3Div = document.getElementById('top-3');
     const restDiv = document.getElementById('rest-ranking');
     if (!campanhaValue) {
         if (top3Div) top3Div.innerHTML = '';
         if (restDiv) restDiv.innerHTML = '';
         if (placeholder) placeholder.style.display = 'flex';
+        if (top3Frame) top3Frame.style.display = 'none';
+        if (leadersTitle) leadersTitle.style.display = 'none';
         return;
     } else {
         if (placeholder) placeholder.style.display = 'none';
+        if (top3Frame) top3Frame.style.display = 'block';
+        if (leadersTitle) leadersTitle.style.display = 'block';
     }
     const filtered = getFilteredColaboradores();
     top3Div.innerHTML = '';
