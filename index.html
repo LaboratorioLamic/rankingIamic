@@ -2089,7 +2089,14 @@ function closeEditCursoModal() {
     const dataInput = document.createElement('input');
     dataInput.type = 'date';
     dataInput.id = 'edit-historico-data';
-    dataInput.value = data || new Date().toISOString().split('T')[0];
+    
+    // Converter data do formato brasileiro (DD/MM/YYYY) para ISO (YYYY-MM-DD)
+    let dataFormatada = new Date().toISOString().split('T')[0];
+    if (data) {
+        const [dia, mes, ano] = data.split('/').map(Number);
+        dataFormatada = `${ano}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+    }
+    dataInput.value = dataFormatada;
 
     const horaInput = document.createElement('input');
     horaInput.type = 'time';
@@ -2171,7 +2178,11 @@ function closeEditCursoModal() {
     if (!col) return;
 
     const oldNome = col.conquistas[idx].nome;
-    const novaDataHora = new Date(`${dataInput}T${horaInput}:00`);
+    
+    // Converter data ISO (YYYY-MM-DD) para componentes
+    const [ano, mes, dia] = dataInput.split('-').map(Number);
+    const [hora, minuto] = horaInput.split(':').map(Number);
+    const novaDataHora = new Date(ano, mes - 1, dia, hora, minuto, 0);
 
     // Atualiza conquista
     col.conquistas[idx] = { nome, icone, cor, descricao };
@@ -2181,8 +2192,8 @@ function closeEditCursoModal() {
     if (historicoEntry) {
         historicoEntry.valor = nome;
         historicoEntry.descricao = `Conquista: "${nome}"`;
-        historicoEntry.data = novaDataHora.toLocaleDateString('pt-BR');
-        historicoEntry.hora = novaDataHora.toTimeString().slice(0,5);
+        historicoEntry.data = `${String(dia).padStart(2, '0')}/${String(mes).padStart(2, '0')}/${ano}`;
+        historicoEntry.hora = `${String(hora).padStart(2, '0')}:${String(minuto).padStart(2, '0')}`;
         historicoEntry.timestamp = novaDataHora.getTime();
     }
 
@@ -2210,7 +2221,11 @@ function editCurso() {
     if (!col) return;
 
     const oldNome = col.cursos[idx].nome;
-    const novaDataHora = new Date(`${dataInput}T${horaInput}:00`);
+    
+    // Converter data ISO (YYYY-MM-DD) para componentes
+    const [ano, mes, dia] = dataInput.split('-').map(Number);
+    const [hora, minuto] = horaInput.split(':').map(Number);
+    const novaDataHora = new Date(ano, mes - 1, dia, hora, minuto, 0);
 
     // Atualiza curso
     col.cursos[idx] = { nome, icone, cor, descricao };
@@ -2220,8 +2235,8 @@ function editCurso() {
     if (historicoEntry) {
         historicoEntry.valor = nome;
         historicoEntry.descricao = `Curso: "${nome}"`;
-        historicoEntry.data = novaDataHora.toLocaleDateString('pt-BR');
-        historicoEntry.hora = novaDataHora.toTimeString().slice(0,5);
+        historicoEntry.data = `${String(dia).padStart(2, '0')}/${String(mes).padStart(2, '0')}/${ano}`;
+        historicoEntry.hora = `${String(hora).padStart(2, '0')}:${String(minuto).padStart(2, '0')}`;
         historicoEntry.timestamp = novaDataHora.getTime();
     }
 
@@ -2249,7 +2264,12 @@ function editCurso() {
         return;
     }
 
-    const novaDataHora = new Date(`${dataInput}T${horaInput}:00`);
+    // Converter data ISO (YYYY-MM-DD) para componentes
+    const [ano, mes, dia] = dataInput.split('-').map(Number);
+    const [hora, minuto] = horaInput.split(':').map(Number);
+    
+    // Criar data corretamente sem problemas de timezone
+    const novaDataHora = new Date(ano, mes - 1, dia, hora, minuto, 0);
     const novoValorNum = parseFloat(novoValor);
 
     if (isNaN(novoValorNum)) {
@@ -2265,19 +2285,10 @@ function editCurso() {
         if (notaIdx !== -1) col.notas[notaIdx] = novoValorNum;
     }
 
-    // Atualiza entrada - mantém a data/hora original se não foi alterada
-    const dataOriginal = new Date(entry.timestamp);
-    const dataAlterada = new Date(`${dataInput}T${horaInput}:00`);
-    
-    // Verifica se a data foi realmente alterada (comparando timestamps)
-    const dataFoiAlterada = dataOriginal.getTime() !== dataAlterada.getTime();
-    
-    if (dataFoiAlterada) {
-        entry.data = novaDataHora.toLocaleDateString('pt-BR');
-        entry.hora = novaDataHora.toTimeString().slice(0,5);
-        entry.timestamp = novaDataHora.getTime();
-    }
-    
+    // Atualiza entrada de histórico com formatação correta
+    entry.data = `${String(dia).padStart(2, '0')}/${String(mes).padStart(2, '0')}/${ano}`;
+    entry.hora = `${String(hora).padStart(2, '0')}:${String(minuto).padStart(2, '0')}`;
+    entry.timestamp = novaDataHora.getTime();
     entry.valor = novoValorNum;
     entry.descricao = novaDescricao;
     entry.campanha = campanhaInput;
