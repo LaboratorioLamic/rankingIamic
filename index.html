@@ -1700,8 +1700,18 @@ function updateRanking() {
             });
         }
         
-        let cursosHTML = '<div class="cursos-ranking">';
+        // Unificar cursos duplicados para exibição
+        const cursosUnificados = [];
+        const cursosVistos = new Set();
         cursosDaCampanha.forEach(curso => {
+            if (!cursosVistos.has(curso.nome)) {
+                cursosUnificados.push(curso);
+                cursosVistos.add(curso.nome);
+            }
+        });
+        
+        let cursosHTML = '<div class="cursos-ranking">';
+        cursosUnificados.forEach(curso => {
             cursosHTML += `<div class="curso-icon-ranking">
                 <i class="${curso.icone}" style="color: ${curso.cor};"></i>
                 <span class="curso-description">${curso.descricao || curso.nome}</span>
@@ -1763,7 +1773,18 @@ function openModal(col) {
 
     const cursosDiv = document.getElementById('modal-cursos');
     cursosDiv.innerHTML = '';
+    
+    // Unificar cursos duplicados para exibição
+    const cursosUnificados = [];
+    const cursosVistos = new Set();
     col.cursos.forEach(curso => {
+        if (!cursosVistos.has(curso.nome)) {
+            cursosUnificados.push(curso);
+            cursosVistos.add(curso.nome);
+        }
+    });
+    
+    cursosUnificados.forEach(curso => {
         const div = document.createElement('div');
         div.classList.add('achievement-card');
         div.style.background = `linear-gradient(to bottom, ${curso.cor}, ${curso.cor})`;
@@ -1851,7 +1872,22 @@ function openEditModal(colId) {
 
         const cursosEdit = document.getElementById('edit-cursos');
         cursosEdit.innerHTML = '';
+        
+        // Unificar cursos duplicados para exibição
+        const cursosUnificados = [];
+        const cursosIndices = [];
+        const cursosVistos = new Set();
+        
         col.cursos.forEach((curso, idx) => {
+            if (!cursosVistos.has(curso.nome)) {
+                cursosUnificados.push(curso);
+                cursosIndices.push(idx);
+                cursosVistos.add(curso.nome);
+            }
+        });
+        
+        cursosUnificados.forEach((curso, displayIdx) => {
+            const idx = cursosIndices[displayIdx];
             const div = document.createElement('div');
             div.classList.add('achievement-card');
             div.style.background = `linear-gradient(to bottom, ${curso.cor}, ${curso.cor})`;
@@ -2885,7 +2921,22 @@ function updateHistoricoCursos() {
             const frame = document.createElement('div');
             frame.classList.add('history-frame');
             const ul = document.createElement('ul1');
-            col.cursos.slice(0, 10).reverse().forEach((curso, idx) => {
+            
+            // Unificar cursos duplicados para exibição
+            const cursosUnificados = [];
+            const cursosIndices = [];
+            const cursosVistos = new Set();
+            
+            col.cursos.forEach((curso, idx) => {
+                if (!cursosVistos.has(curso.nome)) {
+                    cursosUnificados.push(curso);
+                    cursosIndices.push(idx);
+                    cursosVistos.add(curso.nome);
+                }
+            });
+            
+            cursosUnificados.slice(0, 10).reverse().forEach((curso, displayIdx) => {
+                const idx = cursosIndices[cursosIndices.length - 1 - displayIdx];
                 const li = document.createElement('li');
                 li.classList.add('history-item');
                 const div = document.createElement('div');
@@ -2896,7 +2947,7 @@ function updateHistoricoCursos() {
                 const editBtn = document.createElement('button');
                 editBtn.classList.add('edit-conquista-btn');
                 editBtn.innerHTML = '<i class="fas fa-pencil-alt"></i>';
-                editBtn.onclick = () => openEditCursoModal(col.id, col.cursos.length - 1 - idx);
+                editBtn.onclick = () => openEditCursoModal(col.id, idx);
                 div.appendChild(editBtn);
                 li.appendChild(div);
                 ul.appendChild(li);
