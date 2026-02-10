@@ -2882,17 +2882,8 @@ document.getElementById('add-cursos-form').addEventListener('submit', async (e) 
         }
     }
 
-    // === Conclusão: aplica bônus/malus de acordo com seleção ===
+    // === Conclusão: variável para aplicar bônus/malus POR ÚLTIMO ===
     const conclusao = document.getElementById('conclusao-curso') ? document.getElementById('conclusao-curso').value : 'no_prazo';
-    if (conclusao === 'primeiro_dia') {
-        const pontosExtra = 10;
-        col.pontos += pontosExtra;
-        col.historico.push(criarEntradaHistorico('pontos', pontosExtra, '+10 Pontos por Concluir curso no mesmo dia', dataHora, campanha));
-    } else if (conclusao === 'atrasado') {
-        const pontosExtra = -10;
-        col.pontos += pontosExtra;
-        col.historico.push(criarEntradaHistorico('pontos', pontosExtra, '-10 pontos pelo atraso na realização do curso', dataHora, campanha));
-    }
 
     // === Conquistas condicionais baseadas em nota e conclusão ===
     // Buscar conquistas cadastradas pelos nomes
@@ -2932,6 +2923,17 @@ document.getElementById('add-cursos-form').addEventListener('submit', async (e) 
     } else if (conclusao === 'atrasado') {
         // Remover "Super Atento" e "Pontual"
         col.conquistas = col.conquistas.filter(c => c.nome !== 'Super Atento' && c.nome !== 'Pontual');
+    }
+
+    // === Conclusão: aplica bônus/malus de acordo com seleção (PUBLICAR POR ÚLTIMO) ===
+    if (conclusao === 'primeiro_dia') {
+        const pontosExtra = 10;
+        col.pontos += pontosExtra;
+        col.historico.push(criarEntradaHistorico('pontos', pontosExtra, '(+10 Pontos) por Concluir curso no mesmo dia', dataHora, campanha));
+    } else if (conclusao === 'atrasado') {
+        const pontosExtra = -10;
+        col.pontos += pontosExtra;
+        col.historico.push(criarEntradaHistorico('pontos', pontosExtra, '(-10 pontos) pelo atraso na realização do curso', dataHora, campanha));
     }
 
     // === Salva e atualiza ===
