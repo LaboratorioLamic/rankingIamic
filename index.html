@@ -2551,6 +2551,7 @@ async function init() {
     updateColaboradoresSelects();
     updateConquistaSelect();
     updateCursoSelect();
+    verificarCampanhasInvalidas();
     hideLoading();
 }
 
@@ -3628,6 +3629,7 @@ async function editCampanha(campanha) {
     updateColaboradoresList();
     updateColaboradoresSelects();
     updateRanking();
+    verificarCampanhasInvalidas();
 }
 
 function deleteCampanha(campanha) {
@@ -3638,6 +3640,7 @@ function deleteCampanha(campanha) {
         updateCampanhasList();
         updateCampanhasSelects();
         updateFilters();
+        verificarCampanhasInvalidas();
     } else {
         alert('Exclusão cancelada. Você deve digitar exatamente "DELETAR".');
     }
@@ -3720,9 +3723,38 @@ async function migrarRegistrosSemCampanha() {
         // Atualizar as listas suspensas de campanha
         updateCampanhasSelects();
         updateFilters();
+        verificarCampanhasInvalidas();
     } else {
         alert('ℹ️ Nenhum registro encontrado para migrar. Todos os registros já possuem campanhas válidas associadas.');
     }
+}
+
+function verificarCampanhasInvalidas() {
+    const btn = document.getElementById('migrar-campanhas-btn');
+    if (!btn) return;
+    
+    if (campanhas.size === 0) {
+        btn.style.display = 'none';
+        return;
+    }
+    
+    const campanhasValidas = new Set([...campanhas]);
+    let temInvalidos = false;
+    
+    colaboradores.forEach(col => {
+        if (col.historico && !temInvalidos) {
+            col.historico.forEach(entry => {
+                if (entry && (entry.tipo === 'pontos' || entry.tipo === 'curso' || entry.tipo === 'nota')) {
+                    // Verifica se falta campanha ou tem campanha inválida
+                    if (!entry.campanha || !campanhasValidas.has(entry.campanha)) {
+                        temInvalidos = true;
+                    }
+                }
+            });
+        }
+    });
+    
+    btn.style.display = temInvalidos ? 'flex' : 'none';
 }
 
     init();
