@@ -2161,8 +2161,9 @@ function closeEditCursoModal() {
                 const removedNome = col.conquistas[idx].nome;
                 col.conquistas.splice(idx, 1);
                 col.historico = col.historico.filter(entry => !(entry.tipo === 'conquista' && entry.valor === removedNome));
-                saveData({ colaboradores, cargos: [...cargos], unidades: [...unidades] });
+                saveData({ colaboradores, cargos: [...cargos], unidades: [...unidades], campanhas: [...campanhas] });
                 updateHistoricoConquistas();
+                updateRanking();
             }
         }
 
@@ -2172,6 +2173,7 @@ function closeEditCursoModal() {
             if (confirm('Deseja excluir esta conquista?')) {
                 removeConquista(colId, idx);
                 closeEditConquistaModal();
+                openEditModal(colId);
             }
         }
 
@@ -2181,8 +2183,9 @@ function closeEditCursoModal() {
                 const removedNome = col.cursos[idx].nome;
                 col.cursos.splice(idx, 1);
                 col.historico = col.historico.filter(entry => !(entry.tipo === 'curso' && entry.valor === removedNome));
-                saveData({ colaboradores, cargos: [...cargos], unidades: [...unidades] });
+                saveData({ colaboradores, cargos: [...cargos], unidades: [...unidades], campanhas: [...campanhas] });
                 updateHistoricoCursos();
+                updateRanking();
             }
         }
 
@@ -2192,6 +2195,7 @@ function closeEditCursoModal() {
             if (confirm('Deseja excluir este curso?')) {
                 removeCurso(colId, idx);
                 closeEditCursoModal();
+                openEditModal(colId);
             }
         }
 
