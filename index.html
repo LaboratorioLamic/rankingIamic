@@ -2716,9 +2716,12 @@ document.getElementById('add-conquista-form').addEventListener('submit', async (
 document.getElementById('add-cursos-form').addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const colId = parseInt(document.getElementById('colaborador-cursos').value);
+    const nomeColaborador = document.getElementById('colaborador-cursos').value.trim();
+    const col = colaboradores.find(c => c.nome === nomeColaborador);
+    const colId = col ? col.id : null;
+    
     const cursoSelect = document.getElementById('curso-select');
-    const cursoIdx = cursoSelect.value;  // <-- CORRETO: usa o VALUE do <option>
+    const cursoIdx = cursoSelect.value;
     const curso = cursosCadastrados[cursoIdx];
     const campanha = document.getElementById('campanha-cursos').value;
 
@@ -2743,7 +2746,6 @@ document.getElementById('add-cursos-form').addEventListener('submit', async (e) 
     }
 
     const dataHora = new Date(`${dataInput}T${horaInput}:00`);
-    const col = colaboradores.find(c => c.id === colId);
     if (!col) return;
 
     // === Adiciona o curso ===
@@ -2782,7 +2784,10 @@ document.getElementById('add-cursos-form').addEventListener('submit', async (e) 
 });
 document.getElementById('add-nota-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const colId = parseInt(document.getElementById('colaborador-nota').value);
+    const nomeColaborador = document.getElementById('colaborador-nota').value.trim();
+    const col = colaboradores.find(c => c.nome === nomeColaborador);
+    const colId = col ? col.id : null;
+    
     const curso = document.getElementById('curso-nota').value.trim();
     const campanha = document.getElementById('campanha-nota').value;
     const nota = parseFloat(document.getElementById('nota-add').value);
@@ -2800,7 +2805,6 @@ document.getElementById('add-nota-form').addEventListener('submit', async (e) =>
     }
 
     const dataHora = new Date(`${dataInput}T${horaInput}:00`);
-    const col = colaboradores.find(c => c.id === colId);
     if (col) {
         col.notas.push(nota);
         col.historico.push(criarEntradaHistorico('nota', nota, `Nota ${nota} no curso "${curso}"`, dataHora, campanha));
