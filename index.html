@@ -894,7 +894,8 @@
         
         <div id="add-pontos" class="sub-tab-content active">
             <form id="add-pontos-form">
-                <select id="colaborador-pontos" required></select>
+                <input type="text" id="colaborador-pontos" placeholder="Buscar colaborador..." list="colaboradores-list-pontos" required>
+                <datalist id="colaboradores-list-pontos"></datalist>
                 <input type="text" id="legenda-pontos" placeholder="Legenda" required>
                 <input type="number" id="pontos-add" placeholder="Pontos a adicionar (pode ser negativo)" required>
                 <select id="campanha-pontos" required>
@@ -913,7 +914,8 @@
         
         <div id="add-conquista" class="sub-tab-content">
             <form id="add-conquista-form">
-                <select id="colaborador-conquista" required onchange="updateHistoricoConquistas()"></select>
+                <input type="text" id="colaborador-conquista" placeholder="Buscar colaborador..." list="colaboradores-list-conquista" required onchange="updateHistoricoConquistas()">
+                <datalist id="colaboradores-list-conquista"></datalist>
                 <select id="conquista-select" required onchange="updateConquistaSelectPreview()"></select>
                 <center>
                     <div class="datahora">
@@ -929,7 +931,8 @@
         
         <div id="add-cursos" class="sub-tab-content">
             <form id="add-cursos-form">
-                <select id="colaborador-cursos" required onchange="updateHistoricoCursos()"></select>
+                <input type="text" id="colaborador-cursos" placeholder="Buscar colaborador..." list="colaboradores-list-cursos" required onchange="updateHistoricoCursos()">
+                <datalist id="colaboradores-list-cursos"></datalist>
                 <select id="curso-select" required onchange="updateCursoSelectPreview()"></select>
                 <select id="campanha-cursos" required>
                     <option value="">Selecione uma campanha</option>
@@ -952,7 +955,8 @@
         
         <div id="add-nota" class="sub-tab-content">
             <form id="add-nota-form">
-                <select id="colaborador-nota" required onchange="updateHistoricoNotas()"></select>
+                <input type="text" id="colaborador-nota" placeholder="Buscar colaborador..." list="colaboradores-list-nota" required onchange="updateHistoricoNotas()">
+                <datalist id="colaboradores-list-nota"></datalist>
                 <input type="text" id="curso-nota" placeholder="Curso" required>
                 <select id="campanha-nota" required>
                     <option value="">Selecione uma campanha</option>
@@ -1366,52 +1370,89 @@
 
 
 function updateColaboradoresSelects() {
-    const selects = [
-        document.getElementById('colaborador-pontos'),
-        document.getElementById('colaborador-conquista'),
-        document.getElementById('colaborador-cursos'),
-        document.getElementById('colaborador-nota')
+    const inputs = [
+        { id: 'colaborador-pontos', datalist: 'colaboradores-list-pontos', allowTodos: true },
+        { id: 'colaborador-conquista', datalist: 'colaboradores-list-conquista', allowTodos: false },
+        { id: 'colaborador-cursos', datalist: 'colaboradores-list-cursos', allowTodos: false },
+        { id: 'colaborador-nota', datalist: 'colaboradores-list-nota', allowTodos: false }
     ];
     const sortedColaboradores = [...colaboradores].sort((a, b) => a.nome.localeCompare(b.nome));
 
-    selects.forEach(select => {
-        select.innerHTML = '';
+    inputs.forEach(input => {
+        const datalist = document.getElementById(input.datalist);
+        datalist.innerHTML = '';
 
-        if (select.id === 'colaborador-pontos') {
-            // Primeiro: placeholder
-            const optPlaceholder = document.createElement('option');
-            optPlaceholder.value = '';
-            optPlaceholder.textContent = 'Selecione um Colaborador';
-            optPlaceholder.disabled = true;
-            optPlaceholder.selected = true;
-            select.appendChild(optPlaceholder);
-
-            // Depois: SELECIONAR TODOS
+        if (input.allowTodos) {
             const optTodos = document.createElement('option');
-            optTodos.value = 'todos';
-            optTodos.textContent = 'SELECIONAR TODOS';
-            select.appendChild(optTodos);
-        } else {
-            const optVazio = document.createElement('option');
-            optVazio.value = '';
-            optVazio.textContent = 'Selecione um colaborador';
-            select.appendChild(optVazio);
+            optTodos.value = 'SELECIONAR TODOS';
+            datalist.appendChild(optTodos);
         }
 
         // Lista de colaboradores
         sortedColaboradores.forEach(col => {
             const option = document.createElement('option');
-            option.value = col.id;
-            option.textContent = col.nome;
-            select.appendChild(option);
+            option.value = col.nome;
+            option.dataset.id = col.id;
+            datalist.appendChild(option);
         });
     });
 
-    // Eventos onchange
-    document.getElementById('colaborador-pontos').onchange = updateHistoricoPontos;
-    document.getElementById('colaborador-conquista').onchange = updateHistoricoConquistas;
-    document.getElementById('colaborador-cursos').onchange = updateHistoricoCursos;
-    document.getElementById('colaborador-nota').onchange = updateHistoricoNotas;
+    // Eventos onchange com validação
+    document.getElementById('colaborador-pontos').addEventListener('change', function() {
+        validarColaborador('colaborador-pontos', 'colaboradores-list-pontos');
+        updateHistoricoPontos();
+    });
+    
+    document.getElementById('colaborador-conquista').addEventListener('change', function() {
+        validarColaborador('colaborador-conquista', 'colaboradores-list-conquista');
+        updateHistoricoConquistas();
+    });
+    
+    document.getElementById('colaborador-cursos').addEventListener('change', function() {
+        validarColaborador('colaborador-cursos', 'colaboradores-list-cursos');
+        updateHistoricoCursos();
+    });
+    
+    document.getElementById('colaborador-nota').addEventListener('change', function() {
+        validarColaborador('colaborador-nota', 'colaboradores-list-nota');
+        updateHistoricoNotas();
+    });
+}
+
+function validarColaborador(inputId, datalistId) {
+    const input = document.getElementById(inputId);
+    const datalist = document.getElementById(datalistId);
+    const nome = input.value.trim();
+    
+    // Se for "SELECIONAR TODOS", permitir
+    if (nome === 'SELECIONAR TODOS') {
+        input.value = 'todos';
+        return;
+    }
+    
+    // Procura colaborador na lista
+    const encontrado = [...datalist.options].find(opt => opt.value === nome);
+    if (encontrado) {
+        // Armazena o ID para uso posterior no form
+        input.dataset.colaboradorId = encontrado.dataset.id;
+    } else if (nome !== '' && nome !== 'todos') {
+        input.value = '';
+        alert('Colaborador não encontrado. Por favor, selecione um colaborador válido da lista.');
+    }
+}
+
+function getColaboradorId(inputId) {
+    const input = document.getElementById(inputId);
+    const valor = input.value.trim();
+    
+    // Se for "SELECIONAR TODOS"
+    if (valor === 'SELECIONAR TODOS' || valor === 'todos') {
+        return 'todos';
+    }
+    
+    // Procura pelo nome e retorna o ID
+    const col = colaboradores.find(c => c.nome === valor);
+    return col ? col.id : null;
 }
 
 function updateFilters() {
@@ -2569,8 +2610,18 @@ async function init() {
 
     document.getElementById('add-pontos-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const colaboradorSelect = document.getElementById('colaborador-pontos');
-    const colId = colaboradorSelect.value;
+    const colaboradorInput = document.getElementById('colaborador-pontos');
+    const nomeColaborador = colaboradorInput.value.trim();
+    let colId = null;
+    
+    // Determina o colId baseado no nome
+    if (nomeColaborador === 'SELECIONAR TODOS' || nomeColaborador === 'todos') {
+        colId = 'todos';
+    } else {
+        const col = colaboradores.find(c => c.nome === nomeColaborador);
+        colId = col ? col.id : null;
+    }
+    
     const legenda = document.getElementById('legenda-pontos').value.trim();
     const pontos = parseInt(document.getElementById('pontos-add').value);
     const campanha = document.getElementById('campanha-pontos').value;
@@ -2581,7 +2632,7 @@ async function init() {
         alert('Preencha a legenda e um valor válido de pontos!');
         return;
     }
-    if (!colId || colId === '') {
+    if (!colId) {
         alert('Selecione um colaborador ou "SELECIONAR TODOS"!');
         return;
     }
@@ -2608,7 +2659,7 @@ async function init() {
         });
         alert(`Pontos aplicados a todos!`);
     } else {
-        const col = colaboradores.find(c => c.id == colId);
+        const col = colaboradores.find(c => c.id === colId);
         if (col) {
             col.pontos += pontos;
             col.historico.push(criarEntradaHistorico('pontos', pontos, descricaoBase, dataHora, campanha));
@@ -2617,7 +2668,7 @@ async function init() {
 
     await saveData({ colaboradores, cargos: [...cargos], unidades: [...unidades], campanhas: [...campanhas] });
     document.getElementById('add-pontos-form').reset();
-    colaboradorSelect.selectedIndex = 0;
+    colaboradorInput.value = '';
     const agora = new Date();
     document.getElementById('data-pontos').value = agora.toISOString().split('T')[0];
     document.getElementById('hora-pontos').value = agora.toTimeString().slice(0, 5);
@@ -2628,9 +2679,12 @@ async function init() {
 document.getElementById('add-conquista-form').addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const colId = parseInt(document.getElementById('colaborador-conquista').value);
+    const nomeColaborador = document.getElementById('colaborador-conquista').value.trim();
+    const col = colaboradores.find(c => c.nome === nomeColaborador);
+    const colId = col ? col.id : null;
+    
     const conquistaSelect = document.getElementById('conquista-select');
-    const conquistaIdx = conquistaSelect.value;  // <-- CORRETO: usa o VALUE do <option>
+    const conquistaIdx = conquistaSelect.value;
     const conquista = conquistasCadastradas[conquistaIdx];
     const dataInput = document.getElementById('data-conquista').value;
     const horaInput = document.getElementById('hora-conquista').value || '00:00';
@@ -2642,7 +2696,6 @@ document.getElementById('add-conquista-form').addEventListener('submit', async (
     }
 
     const dataHora = new Date(`${dataInput}T${horaInput}:00`);
-    const col = colaboradores.find(c => c.id === colId);
 
     if (col) {
         col.conquistas.push({ ...conquista });
@@ -2834,7 +2887,7 @@ document.getElementById('colaborador-cursos').addEventListener('change', () => {
     }
 
     function updateHistoricoPontos() {
-    const colId = parseInt(document.getElementById('colaborador-pontos').value);
+    const colId = getColaboradorId('colaborador-pontos');
     const historicoDiv = document.getElementById('historico-pontos');
     historicoDiv.innerHTML = '';
     if (colId) {
@@ -2884,7 +2937,7 @@ function removePonto(colId, idx) {
 }
 
 function updateHistoricoConquistas() {
-    const colId = parseInt(document.getElementById('colaborador-conquista').value);
+    const colId = getColaboradorId('colaborador-conquista');
     const historicoDiv = document.getElementById('historico-conquistas');
     historicoDiv.innerHTML = '';
     if (colId) {
@@ -2916,7 +2969,7 @@ function updateHistoricoConquistas() {
 }
 
 function updateHistoricoCursos() {
-    const colId = parseInt(document.getElementById('colaborador-cursos').value);
+    const colId = getColaboradorId('colaborador-cursos');
     const historicoDiv = document.getElementById('historico-cursos');
     historicoDiv.innerHTML = '';
     if (colId) {
@@ -2963,7 +3016,7 @@ function updateHistoricoCursos() {
 }
 
 function updateHistoricoNotas() {
-    const colId = parseInt(document.getElementById('colaborador-nota').value);
+    const colId = getColaboradorId('colaborador-nota');
     const historicoDiv = document.getElementById('historico-notas');
     historicoDiv.innerHTML = '';
     if (colId) {
