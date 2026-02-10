@@ -1674,7 +1674,34 @@ function getFilteredColaboradores() {
             }
         });
 
-        cloned.notaMedia = calculateNotaMedia(cloned.notas);
+        // Calcula a nota média considerando apenas notas do histórico dentro do filtro de campanha/período
+        const notasFiltradas = [];
+        col.historico.forEach(entry => {
+            if (!entry || entry.tipo !== 'nota') return;
+            // Filtra por campanha quando aplicável
+            if (filtroCampanha !== 'geral' && entry.campanha && entry.campanha !== filtroCampanha) return;
+
+            // Filtra por período (ano/mes/manual)
+            if (filtroAno === 'todos') {
+                notasFiltradas.push(Number(entry.valor));
+            } else if (filtroAno === 'manual') {
+                const dataInicioInput = document.getElementById('filtro-data-inicio').value;
+                const dataFimInput = document.getElementById('filtro-data-fim').value;
+                if (dataInicioInput && dataFimInput) {
+                    const [dia, mes, ano] = entry.data.split('/').map(Number);
+                    const dataEntry = new Date(ano, mes - 1, dia);
+                    const inicio = new Date(dataInicioInput);
+                    const fim = new Date(dataFimInput);
+                    fim.setHours(23, 59, 59, 999);
+                    if (dataEntry >= inicio && dataEntry <= fim) notasFiltradas.push(Number(entry.valor));
+                }
+            } else {
+                const [dia, mes, ano] = entry.data.split('/').map(Number);
+                if (ano == filtroAno && (filtroMes === 'todos' || mes == filtroMes)) notasFiltradas.push(Number(entry.valor));
+            }
+        });
+
+        cloned.notaMedia = notasFiltradas.length > 0 ? (notasFiltradas.reduce((a, b) => a + b, 0) / notasFiltradas.length) : 0;
         return cloned;
     }).filter(col => col.historico.length > 0 || filtroAno === 'todos');
 
