@@ -1711,6 +1711,11 @@ function updateRanking() {
     const filtered = getFilteredColaboradores();
     top3Div.innerHTML = '';
     restDiv.innerHTML = '';
+    const filtroAno = document.getElementById('filtro-ano').value;
+    const filtroMes = document.getElementById('filtro-mes').value;
+    const dataInicioInput = document.getElementById('filtro-data-inicio').value;
+    const dataFimInput = document.getElementById('filtro-data-fim').value;
+
     filtered.forEach((col, index) => {
         const card = document.createElement('div');
         card.classList.add('card');
@@ -1789,16 +1794,51 @@ function updateRanking() {
                 </div>
             </div>
         `;
-        card.onclick = () => openModal(col);
+        card.onclick = () => openModal(col, filtroCampanha, filtroAno, filtroMes, dataInicioInput, dataFimInput);
         if (index < 3) top3Div.appendChild(card);
         else restDiv.appendChild(card);
     });
 }
 
-function openModal(col) {
+function openModal(col, filtroCampanha, filtroAno, filtroMes, dataInicioInput, dataFimInput) {
+    // Se filtros não foram passados, lê do DOM (comportamento padrão)
+    filtroCampanha = filtroCampanha || document.getElementById('filtro-campanha').value;
+    filtroAno = filtroAno || document.getElementById('filtro-ano').value;
+    filtroMes = filtroMes || document.getElementById('filtro-mes').value;
+    dataInicioInput = dataInicioInput || document.getElementById('filtro-data-inicio').value;
+    dataFimInput = dataFimInput || document.getElementById('filtro-data-fim').value;
+
     document.getElementById('modal-name').textContent = col.nome;
     document.getElementById('modal-points').textContent = `Pontos: ${col.pontos}`;
-    document.getElementById('modal-nota-media').textContent = `Nota Média: ${calculateNotaMedia(col.notas)}`;
+    // Calcula nota média considerando apenas notas do histórico que pertençam à campanha/período filtrado
+    const notasHistoricoFiltradas = [];
+    if (Array.isArray(col.historico)) {
+        col.historico.forEach(entry => {
+            if (!entry || entry.tipo !== 'nota') return;
+            if (filtroCampanha && filtroCampanha !== 'geral' && entry.campanha !== filtroCampanha) return;
+
+            let incluir = false;
+            if (filtroAno === 'todos') incluir = true;
+            else if (filtroAno === 'manual') {
+                if (dataInicioInput && dataFimInput) {
+                    const [dia, mes, ano] = entry.data.split('/').map(Number);
+                    const dataEntry = new Date(ano, mes - 1, dia);
+                    const inicio = new Date(dataInicioInput);
+                    const fim = new Date(dataFimInput);
+                    fim.setHours(23,59,59,999);
+                    incluir = dataEntry >= inicio && dataEntry <= fim;
+                }
+            } else {
+                const [dia, mes, ano] = entry.data.split('/').map(Number);
+                incluir = ano == filtroAno && (filtroMes === 'todos' || mes == filtroMes);
+            }
+
+            if (incluir) notasHistoricoFiltradas.push(Number(entry.valor));
+        });
+    }
+
+    const notaMediaFiltrada = notasHistoricoFiltradas.length > 0 ? (notasHistoricoFiltradas.reduce((a,b)=>a+b,0)/notasHistoricoFiltradas.length) : 0;
+    document.getElementById('modal-nota-media').textContent = `Nota Média: ${notaMediaFiltrada.toFixed(2)}`;
     document.getElementById('modal-info').textContent = `Cargos: ${col.cargos.join(', ')} | Unidade: ${col.unidade}`;
 
     const achievements = document.getElementById('modal-achievements');
@@ -1815,17 +1855,41 @@ function openModal(col) {
     const cursosDiv = document.getElementById('modal-cursos');
     cursosDiv.innerHTML = '';
     
-    // Unificar cursos duplicados para exibição
-    const cursosUnificados = [];
+    // Unificar cursos duplicados para exibição, filtrando por campanha/período
+    const cursosDaCampanha = [];
     const cursosVistos = new Set();
-    col.cursos.forEach(curso => {
-        if (!cursosVistos.has(curso.nome)) {
-            cursosUnificados.push(curso);
-            cursosVistos.add(curso.nome);
-        }
-    });
-    
-    cursosUnificados.forEach(curso => {
+    if (Array.isArray(col.historico)) {
+        col.historico.forEach(entry => {
+            if (!entry || entry.tipo !== 'curso') return;
+            if (filtroCampanha && filtroCampanha !== 'geral' && entry.campanha !== filtroCampanha) return;
+
+            let incluir = false;
+            if (filtroAno === 'todos') incluir = true;
+            else if (filtroAno === 'manual') {
+                if (dataInicioInput && dataFimInput) {
+                    const [dia, mes, ano] = entry.data.split('/').map(Number);
+                    const dataEntry = new Date(ano, mes - 1, dia);
+                    const inicio = new Date(dataInicioInput);
+                    const fim = new Date(dataFimInput);
+                    fim.setHours(23,59,59,999);
+                    incluir = dataEntry >= inicio && dataEntry <= fim;
+                }
+            } else {
+                const [dia, mes, ano] = entry.data.split('/').map(Number);
+                incluir = ano == filtroAno && (filtroMes === 'todos' || mes == filtroMes);
+            }
+
+            if (incluir) {
+                const curso = col.cursos.find(c => c.nome === entry.valor);
+                if (curso && !cursosVistos.has(curso.nome)) {
+                    cursosDaCampanha.push(curso);
+                    cursosVistos.add(curso.nome);
+                }
+            }
+        });
+    }
+
+    cursosDaCampanha.forEach(curso => {
         const div = document.createElement('div');
         div.classList.add('achievement-card');
         div.style.background = `linear-gradient(to bottom, ${curso.cor}, ${curso.cor})`;
@@ -1837,18 +1901,36 @@ function openModal(col) {
     const history = document.getElementById('modal-history');
     history.innerHTML = '';
 
-    // ✅ Ordena histórico do mais recente para o mais antigo (considerando data e hora)
-    const historicoOrdenado = [...col.historico].sort((a, b) => {
+    // Filtra histórico por campanha/período e ordena do mais recente para o mais antigo
+    const historicoFiltrado = (Array.isArray(col.historico) ? col.historico.filter(entry => {
+        if (!entry) return false;
+        if (filtroCampanha && filtroCampanha !== 'geral' && entry.campanha !== filtroCampanha) return false;
+
+        if (filtroAno === 'todos') return true;
+        if (filtroAno === 'manual') {
+            if (dataInicioInput && dataFimInput) {
+                const [dia, mes, ano] = entry.data.split('/').map(Number);
+                const dataEntry = new Date(ano, mes - 1, dia);
+                const inicio = new Date(dataInicioInput);
+                const fim = new Date(dataFimInput);
+                fim.setHours(23,59,59,999);
+                return dataEntry >= inicio && dataEntry <= fim;
+            }
+            return false;
+        }
+        const [dia, mes, ano] = entry.data.split('/').map(Number);
+        return ano == filtroAno && (filtroMes === 'todos' || mes == filtroMes);
+    }) : []).sort((a, b) => {
         const [diaA, mesA, anoA] = a.data.split('/').map(Number);
         const [horaA, minutoA] = (a.hora || '00:00').split(':').map(Number);
         const [diaB, mesB, anoB] = b.data.split('/').map(Number);
         const [horaB, minutoB] = (b.hora || '00:00').split(':').map(Number);
         const dataHoraA = new Date(anoA, mesA - 1, diaA, horaA, minutoA).getTime();
         const dataHoraB = new Date(anoB, mesB - 1, diaB, horaB, minutoB).getTime();
-        return dataHoraB - dataHoraA; // mais recente primeiro
+        return dataHoraB - dataHoraA;
     });
 
-    historicoOrdenado.slice(0, 10).forEach(entry => {
+    historicoFiltrado.slice(0, 10).forEach(entry => {
         const li = document.createElement('li');
         li.innerHTML = `<strong>${entry.data} ${entry.hora || ''}</strong> – ${entry.descricao}`;
         history.appendChild(li);
