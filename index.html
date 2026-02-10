@@ -898,7 +898,7 @@
                 <datalist id="colaboradores-list-pontos"></datalist>
                 <input type="text" id="legenda-pontos" placeholder="Legenda" required>
                 <input type="number" id="pontos-add" placeholder="Pontos a adicionar (pode ser negativo)" required>
-                <select id="campanha-pontos" required>
+                <select id="campanha-pontos" required onchange="updateHistoricoPontos()">
                     <option value="">Selecione uma campanha</option>
                 </select>
                 <button type="submit">Adicionar Pontos</button>
@@ -934,7 +934,7 @@
                 <input type="text" id="colaborador-cursos" placeholder="Buscar colaborador..." list="colaboradores-list-cursos" required onchange="updateHistoricoCursos()">
                 <datalist id="colaboradores-list-cursos"></datalist>
                 <select id="curso-select" required onchange="updateCursoSelectPreview()"></select>
-                <select id="campanha-cursos" required>
+                <select id="campanha-cursos" required onchange="updateHistoricoCursos()">
                     <option value="">Selecione uma campanha</option>
                 </select>
                 <div class="nota-container">
@@ -958,7 +958,7 @@
                 <input type="text" id="colaborador-nota" placeholder="Buscar colaborador..." list="colaboradores-list-nota" required onchange="updateHistoricoNotas()">
                 <datalist id="colaboradores-list-nota"></datalist>
                 <input type="text" id="curso-nota" placeholder="Curso" required>
-                <select id="campanha-nota" required>
+                <select id="campanha-nota" required onchange="updateHistoricoNotas()">
                     <option value="">Selecione uma campanha</option>
                 </select>
                 <div class="nota-container">
@@ -2974,38 +2974,41 @@ document.getElementById('colaborador-cursos').addEventListener('change', () => {
     }
 
     function updateHistoricoPontos() {
-    const colId = getColaboradorId('colaborador-pontos');
-    const historicoDiv = document.getElementById('historico-pontos');
-    historicoDiv.innerHTML = '';
-    if (colId) {
-        const col = colaboradores.find(c => c.id === colId);
-        if (col) {
-            const frame = document.createElement('div');
-            frame.classList.add('history-frame');
-            const ul = document.createElement('ul2');
-            col.historico.filter(h => h.tipo === 'pontos').slice(0, 10).reverse().forEach((entry, idx) => {
-                const li = document.createElement('li');
-                li.classList.add('history-item');
-                const div = document.createElement('div');
-                div.classList.add('achievement-card');
-                div.style.background = 'linear-gradient(to bottom, #3A5A7D, #2E3A59)';
-                div.style.color = '#E0E7F0';
-                div.innerHTML = `<span>${entry.descricao}</span>`;
-                const editBtn = document.createElement('button');
-                editBtn.textContent = 'Editar';
-                editBtn.onclick = () => openEditHistoricoModal(col.id, col.historico.findIndex(e => e === entry), 'pontos', entry.descricao, entry.valor, entry.data, entry.hora, entry.campanha);
-                div.appendChild(editBtn);
-                const removeBtn = document.createElement('button');
-                removeBtn.textContent = 'Remover';
-                removeBtn.onclick = () => removePonto(col.id, col.historico.findIndex(e => e === entry));
-                div.appendChild(removeBtn);
-                li.appendChild(div);
-                ul.appendChild(li);
-            });
-            frame.appendChild(ul);
-            historicoDiv.appendChild(frame);
+        const colId = getColaboradorId('colaborador-pontos');
+        const historicoDiv = document.getElementById('historico-pontos');
+        historicoDiv.innerHTML = '';
+        const campanhaSel = document.getElementById('campanha-pontos') ? document.getElementById('campanha-pontos').value : '';
+        if (colId) {
+            const col = colaboradores.find(c => c.id === colId);
+            if (col) {
+                const frame = document.createElement('div');
+                frame.classList.add('history-frame');
+                const ul = document.createElement('ul2');
+                col.historico
+                    .filter(h => h.tipo === 'pontos' && (!campanhaSel || campanhaSel === 'geral' || h.campanha === campanhaSel))
+                    .slice(0, 10).reverse().forEach((entry, idx) => {
+                        const li = document.createElement('li');
+                        li.classList.add('history-item');
+                        const div = document.createElement('div');
+                        div.classList.add('achievement-card');
+                        div.style.background = 'linear-gradient(to bottom, #3A5A7D, #2E3A59)';
+                        div.style.color = '#E0E7F0';
+                        div.innerHTML = `<span>${entry.descricao}</span>`;
+                        const editBtn = document.createElement('button');
+                        editBtn.textContent = 'Editar';
+                        editBtn.onclick = () => openEditHistoricoModal(col.id, col.historico.findIndex(e => e === entry), 'pontos', entry.descricao, entry.valor, entry.data, entry.hora, entry.campanha);
+                        div.appendChild(editBtn);
+                        const removeBtn = document.createElement('button');
+                        removeBtn.textContent = 'Remover';
+                        removeBtn.onclick = () => removePonto(col.id, col.historico.findIndex(e => e === entry));
+                        div.appendChild(removeBtn);
+                        li.appendChild(div);
+                        ul.appendChild(li);
+                    });
+                frame.appendChild(ul);
+                historicoDiv.appendChild(frame);
+            }
         }
-    }
 }
 
 function removePonto(colId, idx) {
@@ -3065,19 +3068,25 @@ function updateHistoricoCursos() {
             const frame = document.createElement('div');
             frame.classList.add('history-frame');
             const ul = document.createElement('ul1');
-            
-            // Unificar cursos duplicados para exibição
+            const campanhaSel = document.getElementById('campanha-cursos') ? document.getElementById('campanha-cursos').value : '';
+
+            // Unificar cursos duplicados para exibição considerando campanha selecionada
             const cursosUnificados = [];
             const cursosIndices = [];
             const cursosVistos = new Set();
-            
-            col.cursos.forEach((curso, idx) => {
-                if (!cursosVistos.has(curso.nome)) {
-                    cursosUnificados.push(curso);
-                    cursosIndices.push(idx);
-                    cursosVistos.add(curso.nome);
-                }
-            });
+
+            if (Array.isArray(col.historico)) {
+                col.historico.forEach((entry, idx) => {
+                    if (!entry || entry.tipo !== 'curso') return;
+                    if (campanhaSel && campanhaSel !== 'geral' && entry.campanha !== campanhaSel) return;
+                    const curso = col.cursos.find(c => c.nome === entry.valor);
+                    if (curso && !cursosVistos.has(curso.nome)) {
+                        cursosUnificados.push(curso);
+                        cursosIndices.push(col.cursos.findIndex(c => c.nome === curso.nome));
+                        cursosVistos.add(curso.nome);
+                    }
+                });
+            }
             
             cursosUnificados.slice(0, 10).reverse().forEach((curso, displayIdx) => {
                 const idx = cursosIndices[cursosIndices.length - 1 - displayIdx];
@@ -3106,31 +3115,34 @@ function updateHistoricoNotas() {
     const colId = getColaboradorId('colaborador-nota');
     const historicoDiv = document.getElementById('historico-notas');
     historicoDiv.innerHTML = '';
+    const campanhaSel = document.getElementById('campanha-nota') ? document.getElementById('campanha-nota').value : '';
     if (colId) {
         const col = colaboradores.find(c => c.id === colId);
         if (col) {
             const frame = document.createElement('div');
             frame.classList.add('history-frame');
             const ul = document.createElement('ul2');
-            col.historico.filter(h => h.tipo === 'nota').slice(0, 10).reverse().forEach((entry, idx) => {
-                const li = document.createElement('li');
-                li.classList.add('history-item');
-                const div = document.createElement('div');
-                div.classList.add('achievement-card');
-                div.style.background = 'linear-gradient(to bottom, #3A5A7D, #2E3A59)';
-                div.style.color = '#E0E7F0';
-                div.innerHTML = `<span>${entry.descricao}</span>`;
-                const editBtn = document.createElement('button');
-                editBtn.textContent = 'Editar';
-                editBtn.onclick = () => openEditHistoricoModal(col.id, col.historico.findIndex(e => e === entry), 'nota', entry.descricao, entry.valor, entry.data, entry.hora, entry.campanha);
-                div.appendChild(editBtn);
-                const removeBtn = document.createElement('button');
-                removeBtn.textContent = 'Remover';
-                removeBtn.onclick = () => removeNota(col.id, col.historico.findIndex(e => e === entry));
-                div.appendChild(removeBtn);
-                li.appendChild(div);
-                ul.appendChild(li);
-            });
+            col.historico
+                .filter(h => h.tipo === 'nota' && (!campanhaSel || campanhaSel === 'geral' || h.campanha === campanhaSel))
+                .slice(0, 10).reverse().forEach((entry, idx) => {
+                    const li = document.createElement('li');
+                    li.classList.add('history-item');
+                    const div = document.createElement('div');
+                    div.classList.add('achievement-card');
+                    div.style.background = 'linear-gradient(to bottom, #3A5A7D, #2E3A59)';
+                    div.style.color = '#E0E7F0';
+                    div.innerHTML = `<span>${entry.descricao}</span>`;
+                    const editBtn = document.createElement('button');
+                    editBtn.textContent = 'Editar';
+                    editBtn.onclick = () => openEditHistoricoModal(col.id, col.historico.findIndex(e => e === entry), 'nota', entry.descricao, entry.valor, entry.data, entry.hora, entry.campanha);
+                    div.appendChild(editBtn);
+                    const removeBtn = document.createElement('button');
+                    removeBtn.textContent = 'Remover';
+                    removeBtn.onclick = () => removeNota(col.id, col.historico.findIndex(e => e === entry));
+                    div.appendChild(removeBtn);
+                    li.appendChild(div);
+                    ul.appendChild(li);
+                });
             frame.appendChild(ul);
             historicoDiv.appendChild(frame);
         }
