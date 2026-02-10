@@ -937,9 +937,14 @@
                 <select id="campanha-cursos" required onchange="updateHistoricoCursos()">
                     <option value="">Selecione uma campanha</option>
                 </select>
-                <div class="nota-container">
-                    <input type="number" id="nota-curso" placeholder="Nota da Avaliação (0-10)" min="0" max="10" step="0.1">
-                    <label style="margin-left: 20px;">Pontuar: <input type="checkbox" id="pontuar-curso" checked></label>
+                <div class="nota-container" style="display:flex; align-items:center; gap:8px;">
+                    <input type="number" id="nota-curso" placeholder="Nota (0-10)" min="0" max="10" step="0.1" style="width:15%;">
+                    <select id="conclusao-curso" style="flex:1; min-width:30px;">
+                        <option value="no_prazo">No prazo (Padrão)</option>
+                        <option value="primeiro_dia">Primeiro dia</option>
+                        <option value="atrasado">Atrasado</option>
+                    </select>
+                    <label style="margin-left: 4px;">Pt.: <input type="checkbox" id="pontuar-curso" checked></label>
                 </div>
                 <center>
                     <div class="datahora">
@@ -2875,6 +2880,58 @@ document.getElementById('add-cursos-form').addEventListener('submit', async (e) 
             col.historico.push(criarEntradaHistorico('pontos', pontos,
                 `Ganhou ${pontos} pontos pela nota ${notaValor} no curso: "${curso.nome}"`, dataHora, campanha));
         }
+    }
+
+    // === Conclusão: aplica bônus/malus de acordo com seleção ===
+    const conclusao = document.getElementById('conclusao-curso') ? document.getElementById('conclusao-curso').value : 'no_prazo';
+    if (conclusao === 'primeiro_dia') {
+        const pontosExtra = 10;
+        col.pontos += pontosExtra;
+        col.historico.push(criarEntradaHistorico('pontos', pontosExtra, '+10 Pontos por Concluir curso no mesmo dia', dataHora, campanha));
+    } else if (conclusao === 'atrasado') {
+        const pontosExtra = -10;
+        col.pontos += pontosExtra;
+        col.historico.push(criarEntradaHistorico('pontos', pontosExtra, '-10 pontos pelo atraso na realização do curso', dataHora, campanha));
+    }
+
+    // === Conquistas condicionais baseadas em nota e conclusão ===
+    // Buscar conquistas cadastradas pelos nomes
+    const conquistaNota10 = conquistasCadastradas.find(c => c.nome === 'Nota 10');
+    const conquistaInvicto = conquistasCadastradas.find(c => c.nome === 'Invicto Nota 10');
+    const conquistaSuperAtento = conquistasCadastradas.find(c => c.nome === 'Super Atento');
+    const conquistaPontual = conquistasCadastradas.find(c => c.nome === 'Pontual');
+
+    // === Condição de nota ===
+    if (notaValor !== null) {
+        if (notaValor === 10) {
+            // Adicionar "Nota 10" se existir
+            if (conquistaNota10 && !col.conquistas.find(c => c.nome === 'Nota 10')) {
+                col.conquistas.push({ ...conquistaNota10 });
+            }
+        } else if (notaValor < 10) {
+            // Remover "Nota 10" e "Invicto Nota 10"
+            col.conquistas = col.conquistas.filter(c => c.nome !== 'Nota 10' && c.nome !== 'Invicto Nota 10');
+        }
+    }
+
+    // === Condição de conclusão ===
+    if (conclusao === 'primeiro_dia') {
+        // Adicionar "Super Atento" e "Pontual"
+        if (conquistaSuperAtento && !col.conquistas.find(c => c.nome === 'Super Atento')) {
+            col.conquistas.push({ ...conquistaSuperAtento });
+        }
+        if (conquistaPontual && !col.conquistas.find(c => c.nome === 'Pontual')) {
+            col.conquistas.push({ ...conquistaPontual });
+        }
+    } else if (conclusao === 'no_prazo') {
+        // Remover "Super Atento" e adicionar "Pontual"
+        col.conquistas = col.conquistas.filter(c => c.nome !== 'Super Atento');
+        if (conquistaPontual && !col.conquistas.find(c => c.nome === 'Pontual')) {
+            col.conquistas.push({ ...conquistaPontual });
+        }
+    } else if (conclusao === 'atrasado') {
+        // Remover "Super Atento" e "Pontual"
+        col.conquistas = col.conquistas.filter(c => c.nome !== 'Super Atento' && c.nome !== 'Pontual');
     }
 
     // === Salva e atualiza ===
