@@ -419,6 +419,7 @@
         }
         .achievement-card:hover {
             transform: scale(1.05);
+            z-index: 1000; /* garante que o card ativo fique acima dos vizinhos */
         }
         .achievement-card:hover .achievement-description {
             display: block;
@@ -429,16 +430,22 @@
         .achievement-description {
             display: none;
             position: absolute;
-            top: -40px;
+            bottom: 120%;
             left: 50%;
             transform: translateX(-50%);
             background: #2E3A59;
             color: #E0E7F0;
-            padding: 5px 10px;
-            border-radius: 5px;
-            font-size: 12px;
-            z-index: 10;
-            white-space: nowrap;
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            z-index: 10000; /* bem acima para não ser coberto por cards vizinhos */
+            white-space: normal; /* permite quebra de linha verticalmente */
+            min-width: 180px;
+            max-width: 320px;
+            width: max-content;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+            line-height: 1.4;
         }
         .history-item {
             display: flex;
@@ -661,16 +668,22 @@
     .achievement-description, .curso-description {
         display: none;
         position: absolute;
-        top: -40px;
+        bottom: 120%;
         left: 50%;
         transform: translateX(-50%);
         background: #2E3A59;
         color: #E0E7F0;
-        padding: 5px 10px;
+        padding: 12px 18px;
         border-radius: 5px;
         font-size: 12px;
-        z-index: 10;
-        white-space: nowrap;
+        z-index: 10000; /* assegura exibição sobre outros elementos */
+        white-space: normal;
+        min-width: 200px;
+        max-width: 280px;
+        width: max-content;
+        text-align: center;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        line-height: 1.5;
     }
     .ranking-item-label {
         display: inline;
@@ -1121,11 +1134,11 @@
         let currentTabAttempt = '';
         const icons = [
             'fas fa-trophy', 'fas fa-star', 'fas fa-medal', 'fas fa-crown', 'fas fa-rocket', 'fas fa-lightbulb',
-            'fas fa-check-circle', 'fas fa-gem', 'fas fa-award', 'fas fa-certificate', 'fas fa-bolt', 'fas fa-fire',
+            'fas fa-check-circle', 'fas fa-gem', 'fas fa-award', 'fas fa-microscope', 'fas fa-bolt', 'fas fa-fire',
             'fas fa-heart', 'fas fa-thumbs-up', 'fas fa-user-check', 'fas fa-chart-line', 'fas fa-globe', 'fas fa-brain',
             'fas fa-flag', 'fas fa-shield-alt', 'fas fa-puzzle-piece', 'fas fa-book', 'fas fa-graduation-cap', 'fas fa-briefcase',
             'fas fa-anchor', 'fas fa-compass', 'fas fa-clock', 'fas fa-sun', 'fas fa-moon', 'fas fa-star-of-life',
-            'fas fa-gift', 'fas fa-key', 'fas fa-ribbon', 'fas fa-scroll', 'fas fa-bell', 'fas fa-eye',
+            'fas fa-syringe', 'fas fa-key', 'fas fa-ribbon', 'fas fa-scroll', 'fas fa-bell', 'fas fa-eye',
             'fas fa-fingerprint', 'fas fa-folder', 'fas fa-lock', 'fas fa-paper-plane', 'fas fa-search', 'fas fa-tag',
             'fas fa-chart-pie', 'fas fa-envelope', 'fas fa-handshake', 'fas fa-hourglass', 'fas fa-biohazard', 'fas fa-phone',
             'fas fa-save', 'fas fa-heart', 'fas fa-shopping-cart', 'fas fa-tachometer-alt', 'fas fa-briefcase-medical', 'fas fa-user'
@@ -1150,7 +1163,7 @@
 '#000080', '#0000ff', '#0033ff', '#1C4293', '#0F52BA', '#8080FF',
 
 // Roxo/Rosa
-'#ff00ff', '#cc00ff', '#9900ff', '#7A49A6', '#9966CC', '#C54B8C'
+'#ff00ff', '#9D00FF', '#b143fa', '#7A49A6', '#9966CC', '#C54B8C'
         ];
 
         function isDarkColor(color) {
@@ -1759,7 +1772,7 @@ function updateRanking() {
         col.conquistas.forEach(conq => {
             conquistasHTML += `<div class="achievement-icon-ranking">
                 <i class="${conq.icone}" style="color: ${conq.cor};"></i>
-                <span class="achievement-description">${conq.descricao || conq.nome}</span>
+                <span class="achievement-description"><strong>${conq.nome}</strong><br/>${conq.descricao || ''}</span>
             </div>`;
         });
         conquistasHTML += '</div>';
@@ -1792,7 +1805,7 @@ function updateRanking() {
         cursosUnificados.forEach(curso => {
             cursosHTML += `<div class="curso-icon-ranking">
                 <i class="${curso.icone}" style="color: ${curso.cor};"></i>
-                <span class="curso-description">${curso.descricao || curso.nome}</span>
+                <span class="curso-description"><strong>${curso.nome}</strong><br/>${curso.descricao || ''}</span>
             </div>`;
         });
         cursosHTML += '</div>';
@@ -2888,7 +2901,7 @@ document.getElementById('add-cursos-form').addEventListener('submit', async (e) 
     // === Conquistas condicionais baseadas em nota e conclusão ===
     // Buscar conquistas cadastradas pelos nomes
     const conquistaNota10 = conquistasCadastradas.find(c => c.nome === 'Nota 10');
-    const conquistaInvicto = conquistasCadastradas.find(c => c.nome === 'Invicto Nota 10');
+    const conquistaInvicto = conquistasCadastradas.find(c => c.nome === 'Invicto');
     const conquistaSuperAtento = conquistasCadastradas.find(c => c.nome === 'Super Atento');
     const conquistaPontual = conquistasCadastradas.find(c => c.nome === 'Pontual');
 
@@ -2899,9 +2912,41 @@ document.getElementById('add-cursos-form').addEventListener('submit', async (e) 
             if (conquistaNota10 && !col.conquistas.find(c => c.nome === 'Nota 10')) {
                 col.conquistas.push({ ...conquistaNota10 });
             }
+
+            // Histórico das notas (após adicionar a nota atual)
+            const notasHistorico = col.historico.filter(entry => entry && entry.tipo === 'nota').map(e => Number(e.valor));
+
+            // Invicto: somente quando houver ao menos 3 notas (média das últimas 3 == 10)
+            if (notasHistorico.length >= 3) {
+                const ultimas3 = notasHistorico.slice(-3);
+                const mediaUltimas3 = ultimas3.reduce((sum, v) => sum + v, 0) / 3;
+                if (mediaUltimas3 === 10 && conquistaInvicto && !col.conquistas.find(c => c.nome === 'Invicto')) {
+                    col.conquistas.push({ ...conquistaInvicto });
+                }
+            }
+
+            // Invencível: média das últimas 5 == 10
+            const conquistaInvencivel = conquistasCadastradas.find(c => c.nome === 'Invencível');
+            if (notasHistorico.length >= 5 && conquistaInvencivel) {
+                const ultimas5 = notasHistorico.slice(-5);
+                const mediaUltimas5 = ultimas5.reduce((sum, v) => sum + v, 0) / 5;
+                if (mediaUltimas5 === 10 && !col.conquistas.find(c => c.nome === 'Invencível')) {
+                    col.conquistas.push({ ...conquistaInvencivel });
+                }
+            }
+
+            // Gênio: média das últimas 7 == 10
+            const conquistaGenio = conquistasCadastradas.find(c => c.nome === 'Gênio');
+            if (notasHistorico.length >= 7 && conquistaGenio) {
+                const ultimas7 = notasHistorico.slice(-7);
+                const mediaUltimas7 = ultimas7.reduce((sum, v) => sum + v, 0) / 7;
+                if (mediaUltimas7 === 10 && !col.conquistas.find(c => c.nome === 'Gênio')) {
+                    col.conquistas.push({ ...conquistaGenio });
+                }
+            }
         } else if (notaValor < 10) {
-            // Remover "Nota 10" e "Invicto Nota 10"
-            col.conquistas = col.conquistas.filter(c => c.nome !== 'Nota 10' && c.nome !== 'Invicto Nota 10');
+            // Remover conquistas relacionadas a notas perfeitas
+            col.conquistas = col.conquistas.filter(c => c.nome !== 'Nota 10' && c.nome !== 'Invicto' && c.nome !== 'Invencível' && c.nome !== 'Gênio');
         }
     }
 
@@ -2974,7 +3019,7 @@ document.getElementById('add-nota-form').addEventListener('submit', async (e) =>
     }
 
     const dataHora = new Date(`${dataInput}T${horaInput}:00`);
-    if (col) {
+        if (col) {
         col.notas.push(nota);
         col.historico.push(criarEntradaHistorico('nota', nota, `Nota ${nota} no curso "${curso}"`, dataHora, campanha));
         if (pontuar) {
@@ -2982,6 +3027,52 @@ document.getElementById('add-nota-form').addEventListener('submit', async (e) =>
             col.pontos += pontos;
             col.historico.push(criarEntradaHistorico('pontos', pontos, `Ganhou ${pontos} pontos pela nota ${nota} no curso "${curso}"`, dataHora, campanha));
         }
+
+        // Atualiza conquistas relacionadas a notas perfeitas
+        if (nota < 10) {
+            // Remover todas as conquistas de nota perfeita se a nota atual for menor que 10
+            col.conquistas = col.conquistas.filter(c => c.nome !== 'Nota 10' && c.nome !== 'Invicto' && c.nome !== 'Invencível' && c.nome !== 'Gênio');
+        } else if (nota === 10) {
+            // Adicionar "Nota 10" se existir
+            const conquistaNota10_local = conquistasCadastradas.find(c => c.nome === 'Nota 10');
+            if (conquistaNota10_local && !col.conquistas.find(c => c.nome === 'Nota 10')) {
+                col.conquistas.push({ ...conquistaNota10_local });
+            }
+
+            // Histórico das notas (após adicionar a nota atual)
+            const notasHistorico = col.historico.filter(entry => entry && entry.tipo === 'nota').map(e => Number(e.valor));
+
+            // Invicto (últimas 3) - apenas quando houver ao menos 3 notas
+            const conquistaInvicto_local = conquistasCadastradas.find(c => c.nome === 'Invicto');
+            if (notasHistorico.length >= 3 && conquistaInvicto_local) {
+                const ultimas3 = notasHistorico.slice(-3);
+                const mediaUltimas3 = ultimas3.reduce((s, v) => s + v, 0) / 3;
+                if (mediaUltimas3 === 10 && !col.conquistas.find(c => c.nome === 'Invicto')) {
+                    col.conquistas.push({ ...conquistaInvicto_local });
+                }
+            }
+
+            // Invencível (últimas 5)
+            const conquistaInvencivel_local = conquistasCadastradas.find(c => c.nome === 'Invencível');
+            if (notasHistorico.length >= 5 && conquistaInvencivel_local) {
+                const ultimas5 = notasHistorico.slice(-5);
+                const mediaUltimas5 = ultimas5.reduce((s, v) => s + v, 0) / 5;
+                if (mediaUltimas5 === 10 && !col.conquistas.find(c => c.nome === 'Invencível')) {
+                    col.conquistas.push({ ...conquistaInvencivel_local });
+                }
+            }
+
+            // Gênio (últimas 7)
+            const conquistaGenio_local = conquistasCadastradas.find(c => c.nome === 'Gênio');
+            if (notasHistorico.length >= 7 && conquistaGenio_local) {
+                const ultimas7 = notasHistorico.slice(-7);
+                const mediaUltimas7 = ultimas7.reduce((s, v) => s + v, 0) / 7;
+                if (mediaUltimas7 === 10 && !col.conquistas.find(c => c.nome === 'Gênio')) {
+                    col.conquistas.push({ ...conquistaGenio_local });
+                }
+            }
+        }
+
         await saveData({ colaboradores, cargos: [...cargos], unidades: [...unidades], campanhas: [...campanhas] });
         document.getElementById('add-nota-form').reset();
         document.getElementById('pontuar-nota').checked = true;
