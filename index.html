@@ -1120,6 +1120,50 @@
         </div>
     </div>
 
+    <!-- Modal para edição de Conquista cadastrada (edição completa com ícone/cores) -->
+    <div id="edit-cadastrada-conquista-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="document.getElementById('edit-cadastrada-conquista-modal').style.display='none'">&times;</span>
+            <h2>Editar Conquista Cadastrada</h2>
+            <form id="edit-cadastrada-conquista-form" class="cadastro-form">
+                <input type="hidden" id="edit-cadastrada-conquista-idx">
+                <input type="hidden" id="edit-cadastrada-conquista-original-name">
+                <input type="text" id="edit-cadastrada-conquista-nome" placeholder="Nome da Conquista" required>
+                <input type="text" id="edit-cadastrada-conquista-desc" placeholder="Descrição da Conquista">
+                <button type="button" onclick="toggleSelectorsCadastradaConquista()">Selecionar Ícone</button>
+                <input type="hidden" id="edit-cadastrada-conquista-icone">
+                <input type="hidden" id="edit-cadastrada-conquista-cor" value="#ffd700">
+                <div id="icons-selector-conquista-cadastrada" class="icons-selector"></div>
+                <div id="colors-selector-conquista-cadastrada" class="colors-selector"></div>
+                <div id="edit-cadastrada-conquista-preview" class="achievement-preview"></div>
+                <button type="submit">Salvar</button>
+                <button type="button" id="delete-cadastrada-conquista-btn" style="background:#ff0000;color:#fff;">Excluir</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para edição de Curso cadastrado (edição completa com ícone/cores) -->
+    <div id="edit-cadastrada-curso-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="document.getElementById('edit-cadastrada-curso-modal').style.display='none'">&times;</span>
+            <h2>Editar Curso Cadastrado</h2>
+            <form id="edit-cadastrada-curso-form" class="cadastro-form">
+                <input type="hidden" id="edit-cadastrada-curso-idx">
+                <input type="hidden" id="edit-cadastrada-curso-original-name">
+                <input type="text" id="edit-cadastrada-curso-nome" placeholder="Nome do Curso" required>
+                <input type="text" id="edit-cadastrada-curso-desc" placeholder="Descrição do Curso">
+                <button type="button" onclick="toggleSelectorsCadastradaCurso()">Selecionar Ícone</button>
+                <input type="hidden" id="edit-cadastrada-curso-icone">
+                <input type="hidden" id="edit-cadastrada-curso-cor" value="#ffd700">
+                <div id="icons-selector-curso-cadastrada" class="icons-selector"></div>
+                <div id="colors-selector-curso-cadastrada" class="colors-selector"></div>
+                <div id="edit-cadastrada-curso-preview" class="achievement-preview"></div>
+                <button type="submit">Salvar</button>
+                <button type="button" id="delete-cadastrada-curso-btn" style="background:#ff0000;color:#fff;">Excluir</button>
+            </form>
+        </div>
+    </div>
+
     <script>
         const BIN_ID = '68f7cdf4d0ea881f40b17261';
         const PASSWORD_BIN_ID = '68d7e57bd0ea881f408cf33b';
@@ -1270,6 +1314,7 @@
             selector.innerHTML = '';
             icons.forEach(icon => {
                 const btn = document.createElement('button');
+                btn.type = 'button';
                 btn.classList.add('icon-button');
                 btn.innerHTML = `<i class="${icon}"></i>`;
                 btn.onclick = () => {
@@ -1277,7 +1322,9 @@
                     document.querySelectorAll(`#${selectorId} .icon-button`).forEach(b => b.classList.remove('selected'));
                     btn.classList.add('selected');
                     if (selectorId === 'icons-selector') updateAchievementPreview();
+                    if (selectorId === 'icons-selector-conquista-cadastrada') updateEditCadastradaConquistaPreview();
                     if (selectorId === 'icons-selector-curso') updateCursoPreview();
+                    if (selectorId === 'icons-selector-curso-cadastrada') updateEditCadastradaCursoPreview();
                 };
                 selector.appendChild(btn);
             });
@@ -1288,6 +1335,7 @@
             selector.innerHTML = '';
             colors.forEach(color => {
                 const btn = document.createElement('button');
+                btn.type = 'button';
                 btn.classList.add('color-button');
                 if (isDarkColor(color)) btn.classList.add('inverted');
                 btn.style.backgroundColor = color;
@@ -1296,7 +1344,9 @@
                     document.querySelectorAll(`#${selectorId} .color-button`).forEach(b => b.classList.remove('selected'));
                     btn.classList.add('selected');
                     if (selectorId === 'colors-selector') updateAchievementPreview();
+                    if (selectorId === 'colors-selector-conquista-cadastrada') updateEditCadastradaConquistaPreview();
                     if (selectorId === 'colors-selector-curso') updateCursoPreview();
+                    if (selectorId === 'colors-selector-curso-cadastrada') updateEditCadastradaCursoPreview();
                 };
                 selector.appendChild(btn);
             });
@@ -3729,46 +3779,35 @@ function updateCursoSelectPreview() {
         </div>`;
 }
 
-// 7. Edição/Exclusão de conquistas cadastradas
-async function editConquistaCadastrada(idx) {
+// 7. Edição/Exclusão de conquistas cadastradas (abre modal com seletores e pré-visualização)
+function editConquistaCadastrada(idx) {
     const c = conquistasCadastradas[idx];
-    const novoNome = prompt('Nome:', c.nome);
-    const novaDesc = prompt('Descrição:', c.descricao);
-    if (novoNome && novaDesc) {
-        const nomeAnterior = c.nome;
+    if (!c) return;
+    document.getElementById('edit-cadastrada-conquista-idx').value = idx;
+    document.getElementById('edit-cadastrada-conquista-original-name').value = c.nome;
+    document.getElementById('edit-cadastrada-conquista-nome').value = c.nome;
+    document.getElementById('edit-cadastrada-conquista-desc').value = c.descricao || '';
+    document.getElementById('edit-cadastrada-conquista-icone').value = c.icone;
+    document.getElementById('edit-cadastrada-conquista-cor').value = c.cor || '#ffd700';
 
-        // Atualiza a conquista no array de cadastrados
-        conquistasCadastradas[idx].nome = novoNome;
-        conquistasCadastradas[idx].descricao = novaDesc;
+    initIconsSelector('icons-selector-conquista-cadastrada', 'edit-cadastrada-conquista-icone');
+    initColorsSelector('colors-selector-conquista-cadastrada', 'edit-cadastrada-conquista-cor');
 
-        // Propaga para todos os colaboradores que possuem essa conquista
-        colaboradores.forEach(col => {
-            // Atualiza conquistas do colaborador
-            col.conquistas.forEach(conq => {
-                if (conq.nome === nomeAnterior) {
-                    conq.nome = novoNome;
-                    conq.descricao = novaDesc;
-                }
-            });
-
-            // Atualiza histórico
-            if (Array.isArray(col.historico)) {
-                col.historico.forEach(entry => {
-                    if (entry && entry.tipo === 'conquista' && entry.valor === nomeAnterior) {
-                        entry.valor = novoNome;
-                        entry.descricao = novaDesc;
-                    }
-                });
-            }
+    // marca seleção atual
+    setTimeout(() => {
+        document.querySelectorAll('#icons-selector-conquista-cadastrada .icon-button').forEach(btn => {
+            btn.classList.remove('selected');
+            if (btn.innerHTML.includes(c.icone)) btn.classList.add('selected');
         });
+        document.querySelectorAll('#colors-selector-conquista-cadastrada .color-button').forEach(btn => {
+            btn.classList.remove('selected');
+            // comparar cor em formato hex/rgba pode variar; verificamos value do input
+            if (document.getElementById('edit-cadastrada-conquista-cor').value.toLowerCase() === rgbToHex(btn.style.backgroundColor).toLowerCase()) btn.classList.add('selected');
+        });
+        updateEditCadastradaConquistaPreview();
+    }, 0);
 
-        await saveData();
-        updateConquistasList();
-        updateConquistaSelect();
-        updateColaboradoresList();
-        updateColaboradoresSelects();
-        updateRanking();
-    }
+    document.getElementById('edit-cadastrada-conquista-modal').style.display = 'block';
 }
 function deleteConquistaCadastrada(idx) {
     if (confirm('Excluir conquista?')) {
@@ -3782,43 +3821,30 @@ function deleteConquistaCadastrada(idx) {
 // 8. Edição/Exclusão de cursos cadastrados
 async function editCursoCadastrado(idx) {
     const c = cursosCadastrados[idx];
-    const novoNome = prompt('Nome:', c.nome);
-    const novaDesc = prompt('Descrição:', c.descricao);
-    if (novoNome && novaDesc) {
-        const nomeAnterior = c.nome;
+    if (!c) return;
+    document.getElementById('edit-cadastrada-curso-idx').value = idx;
+    document.getElementById('edit-cadastrada-curso-original-name').value = c.nome;
+    document.getElementById('edit-cadastrada-curso-nome').value = c.nome;
+    document.getElementById('edit-cadastrada-curso-desc').value = c.descricao || '';
+    document.getElementById('edit-cadastrada-curso-icone').value = c.icone;
+    document.getElementById('edit-cadastrada-curso-cor').value = c.cor || '#ffd700';
 
-        // Atualiza o curso no array de cadastrados
-        cursosCadastrados[idx].nome = novoNome;
-        cursosCadastrados[idx].descricao = novaDesc;
+    initIconsSelector('icons-selector-curso-cadastrada', 'edit-cadastrada-curso-icone');
+    initColorsSelector('colors-selector-curso-cadastrada', 'edit-cadastrada-curso-cor');
 
-        // Propaga para todos os colaboradores que possuem esse curso
-        colaboradores.forEach(col => {
-            // Atualiza cursos do colaborador
-            col.cursos.forEach(curso => {
-                if (curso.nome === nomeAnterior) {
-                    curso.nome = novoNome;
-                    curso.descricao = novaDesc;
-                }
-            });
-
-            // Atualiza histórico
-            if (Array.isArray(col.historico)) {
-                col.historico.forEach(entry => {
-                    if (entry && entry.tipo === 'curso' && entry.valor === nomeAnterior) {
-                        entry.valor = novoNome;
-                        entry.descricao = novaDesc;
-                    }
-                });
-            }
+    setTimeout(() => {
+        document.querySelectorAll('#icons-selector-curso-cadastrada .icon-button').forEach(btn => {
+            btn.classList.remove('selected');
+            if (btn.innerHTML.includes(c.icone)) btn.classList.add('selected');
         });
+        document.querySelectorAll('#colors-selector-curso-cadastrada .color-button').forEach(btn => {
+            btn.classList.remove('selected');
+            if (document.getElementById('edit-cadastrada-curso-cor').value.toLowerCase() === rgbToHex(btn.style.backgroundColor).toLowerCase()) btn.classList.add('selected');
+        });
+        updateEditCadastradaCursoPreview();
+    }, 0);
 
-        await saveData();
-        updateCursosList();
-        updateCursoSelect();
-        updateColaboradoresList();
-        updateColaboradoresSelects();
-        updateRanking();
-    }
+    document.getElementById('edit-cadastrada-curso-modal').style.display = 'block';
 }
 function deleteCursoCadastrado(idx) {
     if (confirm('Excluir curso?')) {
@@ -3828,6 +3854,158 @@ function deleteCursoCadastrado(idx) {
         updateCursoSelect();
     }
 }
+
+// Helpers para edição cadastrada (seletores e pré-visualização)
+function toggleSelectorsCadastradaConquista() {
+    const icons = document.getElementById('icons-selector-conquista-cadastrada');
+    const colors = document.getElementById('colors-selector-conquista-cadastrada');
+    const visible = icons.style.display === 'grid';
+    icons.style.display = visible ? 'none' : 'grid';
+    colors.style.display = visible ? 'none' : 'grid';
+    updateEditCadastradaConquistaPreview();
+}
+function toggleSelectorsCadastradaCurso() {
+    const icons = document.getElementById('icons-selector-curso-cadastrada');
+    const colors = document.getElementById('colors-selector-curso-cadastrada');
+    const visible = icons.style.display === 'grid';
+    icons.style.display = visible ? 'none' : 'grid';
+    colors.style.display = visible ? 'none' : 'grid';
+    updateEditCadastradaCursoPreview();
+}
+
+function updateEditCadastradaConquistaPreview() {
+    const nome = document.getElementById('edit-cadastrada-conquista-nome').value || 'Nome da Conquista';
+    const descricao = document.getElementById('edit-cadastrada-conquista-desc').value || '';
+    const icone = document.getElementById('edit-cadastrada-conquista-icone').value || 'fas fa-trophy';
+    const cor = document.getElementById('edit-cadastrada-conquista-cor').value || '#ffd700';
+    const preview = document.getElementById('edit-cadastrada-conquista-preview');
+    preview.innerHTML = `        <h3>Prévia</h3>
+        <div class="achievement-preview-card" style="background:linear-gradient(to bottom,${cor},${cor});color:${isDarkColor(cor)?'#fff':'#000'}">
+            <i class="${icone} achievement-icon"></i> ${nome}
+            <span class="achievement-description">${descricao}</span>
+        </div>`;
+}
+
+function updateEditCadastradaCursoPreview() {
+    const nome = document.getElementById('edit-cadastrada-curso-nome').value || 'Nome do Curso';
+    const descricao = document.getElementById('edit-cadastrada-curso-desc').value || '';
+    const icone = document.getElementById('edit-cadastrada-curso-icone').value || 'fas fa-trophy';
+    const cor = document.getElementById('edit-cadastrada-curso-cor').value || '#ffd700';
+    const preview = document.getElementById('edit-cadastrada-curso-preview');
+    preview.innerHTML = `        <h3>Prévia</h3>
+        <div class="achievement-preview-card" style="background:linear-gradient(to bottom,${cor},${cor});color:${isDarkColor(cor)?'#fff':'#000'}">
+            <i class="${icone} achievement-icon"></i> ${nome}
+            <span class="achievement-description">${descricao}</span>
+        </div>`;
+}
+
+function rgbToHex(rgb) {
+    if (!rgb) return '';
+    // rgb format: "rgb(r, g, b)"
+    const m = rgb.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+    if (!m) return rgb;
+    const r = parseInt(m[1]).toString(16).padStart(2, '0');
+    const g = parseInt(m[2]).toString(16).padStart(2, '0');
+    const b = parseInt(m[3]).toString(16).padStart(2, '0');
+    return `#${r}${g}${b}`;
+}
+
+// Handlers para salvar/excluir edições cadastradas
+document.getElementById('edit-cadastrada-conquista-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const idx = parseInt(document.getElementById('edit-cadastrada-conquista-idx').value);
+    const original = document.getElementById('edit-cadastrada-conquista-original-name').value;
+    const nome = document.getElementById('edit-cadastrada-conquista-nome').value.trim();
+    const descricao = document.getElementById('edit-cadastrada-conquista-desc').value.trim();
+    const icone = document.getElementById('edit-cadastrada-conquista-icone').value;
+    const cor = document.getElementById('edit-cadastrada-conquista-cor').value;
+    if (!nome || !icone) { alert('Preencha nome e ícone!'); return; }
+    // Atualiza array de cadastrados
+    conquistasCadastradas[idx] = { nome, descricao, icone, cor };
+    // Propaga para colaboradores
+    colaboradores.forEach(col => {
+        col.conquistas.forEach(conq => {
+            if (conq.nome === original) {
+                conq.nome = nome;
+                conq.descricao = descricao;
+                conq.icone = icone;
+                conq.cor = cor;
+            }
+        });
+        if (Array.isArray(col.historico)) {
+            col.historico.forEach(entry => {
+                if (entry && entry.tipo === 'conquista' && entry.valor === original) {
+                    entry.valor = nome;
+                    entry.descricao = `Conquista: "${nome}"`;
+                }
+            });
+        }
+    });
+    await saveData();
+    document.getElementById('edit-cadastrada-conquista-modal').style.display = 'none';
+    updateConquistasList();
+    updateConquistaSelect();
+    updateColaboradoresList();
+    updateColaboradoresSelects();
+    updateRanking();
+});
+
+document.getElementById('delete-cadastrada-conquista-btn').addEventListener('click', () => {
+    const idx = parseInt(document.getElementById('edit-cadastrada-conquista-idx').value);
+    if (confirm('Excluir conquista cadastrada?')) {
+        deleteConquistaCadastrada(idx);
+        document.getElementById('edit-cadastrada-conquista-modal').style.display = 'none';
+        updateConquistasList();
+        updateConquistaSelect();
+    }
+});
+
+document.getElementById('edit-cadastrada-curso-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const idx = parseInt(document.getElementById('edit-cadastrada-curso-idx').value);
+    const original = document.getElementById('edit-cadastrada-curso-original-name').value;
+    const nome = document.getElementById('edit-cadastrada-curso-nome').value.trim();
+    const descricao = document.getElementById('edit-cadastrada-curso-desc').value.trim();
+    const icone = document.getElementById('edit-cadastrada-curso-icone').value;
+    const cor = document.getElementById('edit-cadastrada-curso-cor').value;
+    if (!nome || !icone) { alert('Preencha nome e ícone!'); return; }
+    cursosCadastrados[idx] = { nome, descricao, icone, cor };
+    colaboradores.forEach(col => {
+        col.cursos.forEach(curso => {
+            if (curso.nome === original) {
+                curso.nome = nome;
+                curso.descricao = descricao;
+                curso.icone = icone;
+                curso.cor = cor;
+            }
+        });
+        if (Array.isArray(col.historico)) {
+            col.historico.forEach(entry => {
+                if (entry && entry.tipo === 'curso' && entry.valor === original) {
+                    entry.valor = nome;
+                    entry.descricao = `Curso: "${nome}"`;
+                }
+            });
+        }
+    });
+    await saveData();
+    document.getElementById('edit-cadastrada-curso-modal').style.display = 'none';
+    updateCursosList();
+    updateCursoSelect();
+    updateColaboradoresList();
+    updateColaboradoresSelects();
+    updateRanking();
+});
+
+document.getElementById('delete-cadastrada-curso-btn').addEventListener('click', () => {
+    const idx = parseInt(document.getElementById('edit-cadastrada-curso-idx').value);
+    if (confirm('Excluir curso cadastrado?')) {
+        deleteCursoCadastrado(idx);
+        document.getElementById('edit-cadastrada-curso-modal').style.display = 'none';
+        updateCursosList();
+        updateCursoSelect();
+    }
+});
 
 // 9. Funções para gerenciar campanhas
 function updateCampanhasList() {
