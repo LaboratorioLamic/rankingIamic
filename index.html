@@ -298,6 +298,168 @@
             max-width: 730px;
             border-radius: 10px;
         }
+        .campainha-selector-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+            padding-top: 0px;
+        }
+        .campainha-selector-modal.active {
+            display: block;
+        }
+        .campainha-selector-content {
+            background-color: #2E3A59;
+            margin: 10% auto;
+            padding: 20px;
+            border: 2px solid #DDE6ED;
+            width: 90%;
+            max-width: 500px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(221, 230, 237, 0.3);
+        }
+        .campainha-selector-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #DDE6ED;
+            padding-bottom: 10px;
+        }
+        .campainha-selector-header h2 {
+            margin: 0;
+            color: #DDE6ED;
+            font-size: 20px;
+        }
+        .campainha-selector-close {
+            color: #E0E7F0;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+        .campainha-selector-close:hover {
+            color: #DDE6ED;
+        }
+        .campainha-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+        .campainha-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            background: #3A5A7D;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .campainha-item:hover {
+            background: #4A6A8D;
+        }
+        .campainha-item input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-right: 12px;
+            cursor: pointer;
+        }
+        .campainha-item label {
+            flex: 1;
+            cursor: pointer;
+            margin: 0;
+        }
+        .campainha-selector-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        .campainha-selector-buttons button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        .campainha-selector-buttons .btn-confirm {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .campainha-selector-buttons .btn-confirm:hover {
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        .campainha-selector-buttons .btn-cancel {
+            background: #555;
+            color: #E0E7F0;
+        }
+        .campainha-selector-buttons .btn-cancel:hover {
+            background: #666;
+        }
+        .btn-select-campanhas {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            width: 280px;
+            font-weight: 600;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            position: relative;
+            overflow: visible;
+        }
+        .btn-select-campanhas:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+        }
+        .btn-select-campanhas:active {
+            transform: translateY(0);
+        }
+        .btn-select-campanhas i {
+            font-size: 16px;
+        }
+        .btn-select-campanhas .badge {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background: #ff6b6b;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: bold;
+            box-shadow: 0 2px 8px rgba(255, 107, 107, 0.4);
+            border: 2px solid white;
+        }
+        .selected-campanhas-display {
+            background: #3A5A7D;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            min-height: 30px;
+            display: flex;
+            align-items: center;
+            color: #E0E7F0;
+        }
         .close {
             color: #E0E7F0;
             float: right;
@@ -446,6 +608,13 @@
             text-align: center;
             box-shadow: 0 4px 12px rgba(0,0,0,0.35);
             line-height: 1.4;
+        }
+        .achievement-campaign {
+            display: block;
+            font-size: 12px;
+            margin-top: 6px;
+            opacity: 0.95;
+            color: #DCE6F2;
         }
         .history-item {
             display: flex;
@@ -911,9 +1080,10 @@
                 <datalist id="colaboradores-list-pontos"></datalist>
                 <input type="text" id="legenda-pontos" placeholder="Legenda" required>
                 <input type="number" id="pontos-add" placeholder="Pontos a adicionar (pode ser negativo)" required>
-                <select id="campanha-pontos" required onchange="updateHistoricoPontos()">
-                    <option value="">Selecione uma campanha</option>
-                </select>
+                <button type="button" id="btn-campanhas-pontos" class="btn-select-campanhas" onclick="openCampanhaSelector('pontos')">
+                    <i class="fas fa-checkbox"></i>
+                    Selecionar Campanhas
+                </button>
                 <button type="submit">Adicionar Pontos</button>
             </form>
             <center>
@@ -947,9 +1117,10 @@
                 <input type="text" id="colaborador-cursos" placeholder="Buscar colaborador..." list="colaboradores-list-cursos" required onchange="updateHistoricoCursos()">
                 <datalist id="colaboradores-list-cursos"></datalist>
                 <select id="curso-select" required onchange="updateCursoSelectPreview()"></select>
-                <select id="campanha-cursos" required onchange="updateHistoricoCursos()">
-                    <option value="">Selecione uma campanha</option>
-                </select>
+                <button type="button" id="btn-campanhas-cursos" class="btn-select-campanhas" onclick="openCampanhaSelector('cursos')">
+                    <i class="fas fa-checkbox"></i>
+                    Selecionar Campanhas
+                </button>
                 <div class="nota-container" style="display:flex; align-items:center; gap:8px;">
                     <input type="number" id="nota-curso" placeholder="Nota (0-10)" min="0" max="10" step="0.1" style="width:15%;">
                     <select id="conclusao-curso" style="flex:1; min-width:30px;">
@@ -976,9 +1147,10 @@
                 <input type="text" id="colaborador-nota" placeholder="Buscar colaborador..." list="colaboradores-list-nota" required onchange="updateHistoricoNotas()">
                 <datalist id="colaboradores-list-nota"></datalist>
                 <input type="text" id="curso-nota" placeholder="Curso" required>
-                <select id="campanha-nota" required onchange="updateHistoricoNotas()">
-                    <option value="">Selecione uma campanha</option>
-                </select>
+                <button type="button" id="btn-campanhas-nota" class="btn-select-campanhas" onclick="openCampanhaSelector('nota')">
+                    <i class="fas fa-checkbox"></i>
+                    Selecionar Campanhas
+                </button>
                 <div class="nota-container">
                     <input type="number" id="nota-add" placeholder="Nota da Prova (0-10)" min="0" max="10" step="0.1" required>
                     <label style="margin-left: 20px;">Pontuar: <input type="checkbox" id="pontuar-nota" checked></label>
@@ -1117,6 +1289,21 @@
                 <input type="password" id="password-input" placeholder="Senha" required>
                 <button type="submit">Entrar</button>
             </form>
+        </div>
+    </div>
+
+    <!-- Modal para selecionar campanhas -->
+    <div id="campainha-selector-modal" class="campainha-selector-modal">
+        <div class="campainha-selector-content">
+            <div class="campainha-selector-header">
+                <h2>Selecionar Campanhas</h2>
+                <span class="campainha-selector-close" onclick="closeCampanhaSelector()">&times;</span>
+            </div>
+            <div class="campainha-list" id="campainha-list-container"></div>
+            <div class="campainha-selector-buttons">
+                <button type="button" class="btn-confirm" onclick="confirmCampanhaSelection()">Confirmar</button>
+                <button type="button" class="btn-cancel" onclick="closeCampanhaSelector()">Cancelar</button>
+            </div>
         </div>
     </div>
 
@@ -1441,7 +1628,7 @@ function updateColaboradoresSelects() {
     const inputs = [
         { id: 'colaborador-pontos', datalist: 'colaboradores-list-pontos', allowTodos: true },
         { id: 'colaborador-conquista', datalist: 'colaboradores-list-conquista', allowTodos: false },
-        { id: 'colaborador-cursos', datalist: 'colaboradores-list-cursos', allowTodos: false },
+        { id: 'colaborador-cursos', datalist: 'colaboradores-list-cursos', allowTodos: true },
         { id: 'colaborador-nota', datalist: 'colaboradores-list-nota', allowTodos: false }
     ];
     const sortedColaboradores = [...colaboradores].sort((a, b) => a.nome.localeCompare(b.nome));
@@ -1818,8 +2005,23 @@ function updateRanking() {
         if (index === 0) { card.classList.add('rank-1'); trophyColor = 'gold'; trophyIcon = '<i class="fas fa-trophy trophy" style="color: gold;"></i>'; }
         else if (index === 1) { card.classList.add('rank-2'); trophyColor = 'silver'; trophyIcon = '<i class="fas fa-trophy trophy" style="color: silver;"></i>'; }
         else if (index === 2) { card.classList.add('rank-3'); trophyColor = '#cd7f32'; trophyIcon = '<i class="fas fa-trophy trophy" style="color: #cd7f32;"></i>'; }
+        
+        // Filtra conquistas pela campanha selecionada
+        const filtroCampanha = document.getElementById('filtro-campanha').value;
+        const conquistasDaCampanha = [];
+        if (filtroCampanha && Array.isArray(col.conquistas)) {
+            col.conquistas.forEach(conq => {
+                if (conq && conq.campanha === filtroCampanha) {
+                    conquistasDaCampanha.push(conq);
+                }
+            });
+        } else {
+            // Se não houver filtro de campanha, mostrar todas as conquistas
+            conquistasDaCampanha.push(...col.conquistas);
+        }
+
         let conquistasHTML = '<div class="achievements-ranking">';
-        col.conquistas.forEach(conq => {
+        conquistasDaCampanha.forEach(conq => {
             conquistasHTML += `<div class="achievement-icon-ranking">
                 <i class="${conq.icone}" style="color: ${conq.cor};"></i>
                 <span class="achievement-description"><strong>${conq.nome}</strong><br/>${conq.descricao || ''}</span>
@@ -1828,7 +2030,6 @@ function updateRanking() {
         conquistasHTML += '</div>';
         
         // Filtra cursos apenas pela campanha selecionada
-        const filtroCampanha = document.getElementById('filtro-campanha').value;
         const cursosDaCampanha = [];
         if (filtroCampanha && Array.isArray(col.historico)) {
             col.historico.forEach(entry => {
@@ -1938,7 +2139,21 @@ function openModal(col, filtroCampanha, filtroAno, filtroMes, dataInicioInput, d
 
     const achievements = document.getElementById('modal-achievements');
     achievements.innerHTML = '';
-    col.conquistas.forEach(conq => {
+    
+    // Filtra conquistas pela campanha selecionada
+    const conquistasDaCampanha = [];
+    if (filtroCampanha && filtroCampanha !== 'geral') {
+        col.conquistas.forEach(conq => {
+            if (conq && conq.campanha === filtroCampanha) {
+                conquistasDaCampanha.push(conq);
+            }
+        });
+    } else {
+        // Se não houver filtro de campanha, mostrar todas
+        conquistasDaCampanha.push(...col.conquistas);
+    }
+
+    conquistasDaCampanha.forEach(conq => {
         const div = document.createElement('div');
         div.classList.add('achievement-card');
         div.style.background = `linear-gradient(to bottom, ${conq.cor}, ${conq.cor})`;
@@ -2079,7 +2294,7 @@ function openEditModal(colId) {
             div.classList.add('achievement-card');
             div.style.background = `linear-gradient(to bottom, ${conq.cor}, ${conq.cor})`;
             div.style.color = isDarkColor(conq.cor) ? '#ffffff' : '#000000';
-            div.innerHTML = `<i class="${conq.icone} achievement-icon"></i> ${conq.nome}<span class="achievement-description">${conq.descricao || ''}</span>`;
+            div.innerHTML = `<i class="${conq.icone} achievement-icon"></i> ${conq.nome}<span class="achievement-description">${conq.descricao || ''}${conq.campanha ? '<div class="achievement-campaign">(' + conq.campanha + ')</div>' : ''}</span>`;
             const editBtn = document.createElement('button');
             editBtn.classList.add('edit-conquista-btn');
             editBtn.innerHTML = '<i class="fas fa-pencil-alt"></i>';
@@ -2110,7 +2325,7 @@ function openEditModal(colId) {
             div.classList.add('achievement-card');
             div.style.background = `linear-gradient(to bottom, ${curso.cor}, ${curso.cor})`;
             div.style.color = isDarkColor(curso.cor) ? '#ffffff' : '#000000';
-            div.innerHTML = `<i class="${curso.icone} achievement-icon"></i> ${curso.nome}<span class="achievement-description">${curso.descricao || ''}</span>`;
+            div.innerHTML = `<i class="${curso.icone} achievement-icon"></i> ${curso.nome}<span class="achievement-description">${curso.descricao || ''}${curso.campanha ? '<div class="achievement-campaign">(' + curso.campanha + ')</div>' : ''}</span>`;
             const editBtn = document.createElement('button');
             editBtn.classList.add('edit-conquista-btn');
             editBtn.innerHTML = '<i class="fas fa-pencil-alt"></i>';
@@ -2228,6 +2443,38 @@ function openEditModal(colId) {
     const iconButton = form.querySelector('button[onclick="toggleSelectorsEdit()"]');
     iconButton.parentNode.insertBefore(dataInput, iconButton.nextSibling);
     iconButton.parentNode.insertBefore(horaInput, iconButton.nextSibling.nextSibling);
+
+    // Preencher/garantir campo de campanha (inserir antes do botão de ícone se necessário)
+    let campanhaSelect = document.getElementById('edit-conquista-campanha');
+    let campanhaLabel = document.getElementById('edit-conquista-campanha-label');
+    if (!campanhaSelect) {
+        campanhaSelect = document.createElement('select');
+        campanhaSelect.id = 'edit-conquista-campanha';
+        campanhaSelect.required = true;
+    }
+    if (!campanhaLabel) {
+        campanhaLabel = document.createElement('label');
+        campanhaLabel.id = 'edit-conquista-campanha-label';
+        campanhaLabel.textContent = 'Campanha: ';
+    }
+
+    // Se ainda não inserimos no DOM, inserir antes do iconButton
+    if (!campanhaSelect.parentNode) {
+        iconButton.parentNode.insertBefore(campanhaLabel, iconButton);
+        iconButton.parentNode.insertBefore(campanhaSelect, campanhaLabel.nextSibling);
+    } else if (!campanhaLabel.parentNode) {
+        iconButton.parentNode.insertBefore(campanhaLabel, iconButton);
+    }
+
+    // Popular opções sempre (garante seleção correta)
+    campanhaSelect.innerHTML = '';
+    [...campanhas].sort((a,b)=>a.localeCompare(b)).forEach(camp => {
+        const opt = document.createElement('option');
+        opt.value = camp;
+        opt.textContent = camp;
+        if (conq.campanha === camp) opt.selected = true;
+        campanhaSelect.appendChild(opt);
+    });
 
     // Inicializa seletores
     initIconsSelector('edit-icons-selector', 'edit-conquista-icone');
@@ -2399,8 +2646,43 @@ function closeEditCursoModal() {
             const col = colaboradores.find(c => c.id === colId);
             if (col) {
                 const removedNome = col.cursos[idx].nome;
+                // Remove curso from list
                 col.cursos.splice(idx, 1);
-                col.historico = col.historico.filter(entry => !(entry.tipo === 'curso' && entry.valor === removedNome));
+
+                // Find all note entries related to this course
+                const notasRelacionadas = (col.historico || []).filter(entry => entry && entry.tipo === 'nota' && entry.descricao && entry.descricao.includes(removedNome));
+                const notasValores = notasRelacionadas.map(n => n.valor);
+
+                // Remove course entries and related note entries
+                col.historico = (col.historico || []).filter(entry => {
+                    if (!entry) return false;
+                    // remove course records
+                    if (entry.tipo === 'curso' && entry.valor === removedNome) return false;
+                    // remove note records that reference the course
+                    if (entry.tipo === 'nota' && entry.descricao && entry.descricao.includes(removedNome)) return false;
+                    return true;
+                });
+
+                // Remove corresponding note values from col.notas (one per removed note entry)
+                if (Array.isArray(col.notas) && notasValores.length > 0) {
+                    notasValores.forEach(val => {
+                        const ni = col.notas.indexOf(Number(val));
+                        if (ni !== -1) col.notas.splice(ni, 1);
+                    });
+                }
+
+                // Also remove pontos entries that were granted for those notes (match by course name and note value)
+                col.historico = col.historico.filter(entry => {
+                    if (!entry) return false;
+                    if (entry.tipo === 'pontos' && entry.descricao && entry.descricao.includes(removedNome)) {
+                        // If description references a note value that we removed, drop it
+                        for (const v of notasValores) {
+                            if (String(entry.descricao).includes(String(v))) return false;
+                        }
+                    }
+                    return true;
+                });
+
                 saveData({ colaboradores, cargos: [...cargos], unidades: [...unidades], campanhas: [...campanhas] });
                 updateHistoricoCursos();
                 updateRanking();
@@ -2442,8 +2724,9 @@ function closeEditCursoModal() {
     const [hora, minuto] = horaInput.split(':').map(Number);
     const novaDataHora = new Date(ano, mes - 1, dia, hora, minuto, 0);
 
-    // Atualiza conquista
-    col.conquistas[idx] = { nome, icone, cor, descricao };
+    // Atualiza conquista (inclui campanha se informado)
+    const campanhaSelecionada = document.getElementById('edit-conquista-campanha') ? document.getElementById('edit-conquista-campanha').value : null;
+    col.conquistas[idx] = { nome, icone, cor, descricao, campanha: campanhaSelecionada };
 
     // Atualiza entrada no histórico
     const historicoEntry = col.historico.find(e => e.tipo === 'conquista' && e.valor === oldNome);
@@ -2453,6 +2736,7 @@ function closeEditCursoModal() {
         historicoEntry.data = `${String(dia).padStart(2, '0')}/${String(mes).padStart(2, '0')}/${ano}`;
         historicoEntry.hora = `${String(hora).padStart(2, '0')}:${String(minuto).padStart(2, '0')}`;
         historicoEntry.timestamp = novaDataHora.getTime();
+        if (campanhaSelecionada) historicoEntry.campanha = campanhaSelecionada;
     }
 
     saveData({ colaboradores, cargos: [...cargos], unidades: [...unidades] });
@@ -2697,20 +2981,32 @@ async function init() {
     if (campanhas.size > 0) {
         const primeiraCampanha = [...campanhas].sort((a, b) => a.localeCompare(b))[0];
         let registrosMigrados = 0;
+        let conquistasMigradas = 0;
         
         colaboradores.forEach(col => {
+            // === Migrar histórico sem campanha ===
             if (col.historico) {
                 col.historico.forEach(entry => {
-                    if (!entry.campanha && (entry.tipo === 'pontos' || entry.tipo === 'curso' || entry.tipo === 'nota')) {
+                    if (!entry.campanha && (entry.tipo === 'pontos' || entry.tipo === 'curso' || entry.tipo === 'nota' || entry.tipo === 'conquista')) {
                         entry.campanha = primeiraCampanha;
                         registrosMigrados++;
                     }
                 });
             }
+
+            // === Migrar conquistas sem campanha ===
+            if (col.conquistas && Array.isArray(col.conquistas)) {
+                col.conquistas.forEach(conq => {
+                    if (!conq.campanha) {
+                        conq.campanha = primeiraCampanha;
+                        conquistasMigradas++;
+                    }
+                });
+            }
         });
         
-        if (registrosMigrados > 0) {
-            console.log(`Migrados ${registrosMigrados} registros para a campanha: ${primeiraCampanha}`);
+        if (registrosMigrados > 0 || conquistasMigradas > 0) {
+            console.log(`Migrados ${registrosMigrados} registros de histórico e ${conquistasMigradas} conquistas para a campanha: ${primeiraCampanha}`);
         }
     }
 
@@ -2802,7 +3098,7 @@ async function init() {
     
     const legenda = document.getElementById('legenda-pontos').value.trim();
     const pontos = parseInt(document.getElementById('pontos-add').value);
-    const campanha = document.getElementById('campanha-pontos').value;
+    const campanhasSelecionadas = campanhasSelecionadasPontos;
     const dataInput = document.getElementById('data-pontos').value;
     const horaInput = document.getElementById('hora-pontos').value || '00:00';
 
@@ -2814,8 +3110,8 @@ async function init() {
         alert('Selecione um colaborador ou "SELECIONAR TODOS"!');
         return;
     }
-    if (!campanha) {
-        alert('Selecione uma campanha!');
+    if (campanhasSelecionadas.length === 0) {
+        alert('Selecione uma ou mais campanhas!');
         return;
     }
     if (!dataInput) {
@@ -2826,27 +3122,31 @@ async function init() {
     const dataHora = new Date(`${dataInput}T${horaInput}:00`);
     const descricaoBase = `${legenda}: ${pontos > 0 ? '+' : ''}${pontos} pontos (${dataHora.toLocaleDateString('pt-BR')} ${dataHora.toTimeString().slice(0,5)})`;
 
-    if (colId === 'todos') {
-        const totalColaboradores = colaboradores.length;
-        const confirma = confirm(`Aplicar a todos os ${totalColaboradores} colaboradores?`);
-        if (!confirma) return;
+    // Iterar sobre cada campanha selecionada
+    for (const campanha of campanhasSelecionadas) {
+        if (colId === 'todos') {
+            const totalColaboradores = colaboradores.length;
+            const confirma = campanhasSelecionadas.length > 1 ? true : confirm(`Aplicar a todos os ${totalColaboradores} colaboradores?`);
+            if (!confirma) continue;
 
-        colaboradores.forEach(col => {
-            col.pontos += pontos;
-            col.historico.push(criarEntradaHistorico('pontos', pontos, descricaoBase, dataHora, campanha));
-        });
-        alert(`Pontos aplicados a todos!`);
-    } else {
-        const col = colaboradores.find(c => c.id === colId);
-        if (col) {
-            col.pontos += pontos;
-            col.historico.push(criarEntradaHistorico('pontos', pontos, descricaoBase, dataHora, campanha));
+            colaboradores.forEach(col => {
+                col.pontos += pontos;
+                col.historico.push(criarEntradaHistorico('pontos', pontos, descricaoBase, dataHora, campanha));
+            });
+        } else {
+            const col = colaboradores.find(c => c.id === colId);
+            if (col) {
+                col.pontos += pontos;
+                col.historico.push(criarEntradaHistorico('pontos', pontos, descricaoBase, dataHora, campanha));
+            }
         }
     }
 
     await saveData({ colaboradores, cargos: [...cargos], unidades: [...unidades], campanhas: [...campanhas] });
     document.getElementById('add-pontos-form').reset();
     colaboradorInput.value = '';
+    campanhasSelecionadasPontos = [];
+    updateButtonBadge('btn-campanhas-pontos', 0);
     const agora = new Date();
     document.getElementById('data-pontos').value = agora.toISOString().split('T')[0];
     document.getElementById('hora-pontos').value = agora.toTimeString().slice(0, 5);
@@ -2873,12 +3173,19 @@ document.getElementById('add-conquista-form').addEventListener('submit', async (
         return;
     }
 
+    if (campanhas.size === 0) {
+        alert('Nenhuma campanha cadastrada! Cadastre uma campanha primeiro.');
+        return;
+    }
+
     const dataHora = new Date(`${dataInput}T${horaInput}:00`);
+    const primeiraCampanha = [...campanhas].sort((a, b) => a.localeCompare(b))[0];
 
     if (col) {
-        col.conquistas.push({ ...conquista });
+        // Conquistas agora incluem referência de campanha
+        col.conquistas.push({ ...conquista, campanha: primeiraCampanha });
         col.historico.push(criarEntradaHistorico('conquista', conquista.nome,
-            `Conquista: "${conquista.nome}"`, dataHora));
+            `Conquista: "${conquista.nome}"`, dataHora, primeiraCampanha));
 
         await saveData();
 
@@ -2889,33 +3196,33 @@ document.getElementById('add-conquista-form').addEventListener('submit', async (
         document.getElementById('hora-conquista').value = agora.toTimeString().slice(0, 5);
 
         updateHistoricoConquistas();
+        updateRanking();
     }
 });
 document.getElementById('add-cursos-form').addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const nomeColaborador = document.getElementById('colaborador-cursos').value.trim();
-    const col = colaboradores.find(c => c.nome === nomeColaborador);
-    const colId = col ? col.id : null;
+    const colId = getColaboradorId('colaborador-cursos');
     
     const cursoSelect = document.getElementById('curso-select');
     const cursoIdx = cursoSelect.value;
     const curso = cursosCadastrados[cursoIdx];
-    const campanha = document.getElementById('campanha-cursos').value;
+    const campanhasSelecionadas = campanhasSelecionadasCursos;
 
     const notaInput = document.getElementById('nota-curso').value.trim();
     const notaValor = notaInput === '' ? null : parseFloat(notaInput);
     const pontuar = document.getElementById('pontuar-curso').checked;
     const dataInput = document.getElementById('data-curso').value;
     const horaInput = document.getElementById('hora-curso').value || '00:00';
+    const conclusao = document.getElementById('conclusao-curso') ? document.getElementById('conclusao-curso').value : 'no_prazo';
 
     // === VALIDAÇÃO MELHORADA ===
-    if (!colId || cursoIdx === "" || !curso || !dataInput) {
+    if (colId === null || cursoIdx === "" || !curso || !dataInput) {
         alert('Preencha colaborador, curso e data!');
         return;
     }
-    if (!campanha) {
-        alert('Selecione uma campanha!');
+    if (campanhasSelecionadas.length === 0) {
+        alert('Selecione uma ou mais campanhas!');
         return;
     }
     if (notaValor !== null && (isNaN(notaValor) || notaValor < 0 || notaValor > 10)) {
@@ -2924,111 +3231,114 @@ document.getElementById('add-cursos-form').addEventListener('submit', async (e) 
     }
 
     const dataHora = new Date(`${dataInput}T${horaInput}:00`);
-    if (!col) return;
 
-    // === Adiciona o curso ===
-    col.cursos.push({ ...curso });
-    col.historico.push(criarEntradaHistorico('curso', curso.nome,
-        `Curso: "${curso.nome}"`, dataHora, campanha));
+    // Helper que aplica o curso a um colaborador específico
+    const aplicarCursoParaColaborador = (col, campanha) => {
+        // Adiciona curso
+        col.cursos.push({ ...curso });
+        col.historico.push(criarEntradaHistorico('curso', curso.nome, `Curso: "${curso.nome}"`, dataHora, campanha));
 
-    // === Nota e pontuação (se preenchida) ===
-    if (notaValor !== null) {
-        col.notas.push(notaValor);
-        col.historico.push(criarEntradaHistorico('nota', notaValor,
-            `Nota ${notaValor} no curso: "${curso.nome}"`, dataHora, campanha));
-
-        if (pontuar) {
-            const pontos = notaValor * 10;
-            col.pontos += pontos;
-            col.historico.push(criarEntradaHistorico('pontos', pontos,
-                `Ganhou ${pontos} pontos pela nota ${notaValor} no curso: "${curso.nome}"`, dataHora, campanha));
-        }
-    }
-
-    // === Conclusão: variável para aplicar bônus/malus POR ÚLTIMO ===
-    const conclusao = document.getElementById('conclusao-curso') ? document.getElementById('conclusao-curso').value : 'no_prazo';
-
-    // === Conquistas condicionais baseadas em nota e conclusão ===
-    // Buscar conquistas cadastradas pelos nomes
-    const conquistaNota10 = conquistasCadastradas.find(c => c.nome === 'Nota 10');
-    const conquistaInvicto = conquistasCadastradas.find(c => c.nome === 'Invicto');
-    const conquistaSuperAtento = conquistasCadastradas.find(c => c.nome === 'Super Atento');
-    const conquistaPontual = conquistasCadastradas.find(c => c.nome === 'Pontual');
-
-    // === Condição de nota ===
-    if (notaValor !== null) {
-        if (notaValor === 10) {
-            // Adicionar "Nota 10" se existir
-            if (conquistaNota10 && !col.conquistas.find(c => c.nome === 'Nota 10')) {
-                col.conquistas.push({ ...conquistaNota10 });
+        // Nota e pontuação
+        if (notaValor !== null) {
+            col.notas.push(notaValor);
+            col.historico.push(criarEntradaHistorico('nota', notaValor, `Nota ${notaValor} no curso: "${curso.nome}"`, dataHora, campanha));
+            if (pontuar) {
+                const pontos = notaValor * 10;
+                col.pontos += pontos;
+                col.historico.push(criarEntradaHistorico('pontos', pontos, `Ganhou ${pontos} pontos pela nota ${notaValor} no curso: "${curso.nome}"`, dataHora, campanha));
             }
+        }
 
-            // Histórico das notas (após adicionar a nota atual)
-            const notasHistorico = col.historico.filter(entry => entry && entry.tipo === 'nota').map(e => Number(e.valor));
+        // Atualiza conquistas automáticas (mesma lógica existente, por campanha)
+        const conquistaNota10 = conquistasCadastradas.find(c => c.nome === 'Nota 10');
+        const conquistaInvicto = conquistasCadastradas.find(c => c.nome === 'Invicto');
+        const conquistaSuperAtento = conquistasCadastradas.find(c => c.nome === 'Super Atento');
+        const conquistaPontual = conquistasCadastradas.find(c => c.nome === 'Pontual');
 
-            // Invicto: somente quando houver ao menos 3 notas (média das últimas 3 == 10)
-            if (notasHistorico.length >= 3) {
-                const ultimas3 = notasHistorico.slice(-3);
-                const mediaUltimas3 = ultimas3.reduce((sum, v) => sum + v, 0) / 3;
-                if (mediaUltimas3 === 10 && conquistaInvicto && !col.conquistas.find(c => c.nome === 'Invicto')) {
-                    col.conquistas.push({ ...conquistaInvicto });
+        if (notaValor !== null) {
+            if (notaValor === 10) {
+                if (conquistaNota10 && !col.conquistas.find(c => c.nome === 'Nota 10' && c.campanha === campanha)) {
+                    col.conquistas.push({ ...conquistaNota10, campanha });
+                    col.historico.push(criarEntradaHistorico('conquista', 'Nota 10', `Conquista Automática: "Nota 10" desbloqueada!`, dataHora, campanha));
                 }
-            }
-
-            // Invencível: média das últimas 5 == 10
-            const conquistaInvencivel = conquistasCadastradas.find(c => c.nome === 'Invencível');
-            if (notasHistorico.length >= 5 && conquistaInvencivel) {
-                const ultimas5 = notasHistorico.slice(-5);
-                const mediaUltimas5 = ultimas5.reduce((sum, v) => sum + v, 0) / 5;
-                if (mediaUltimas5 === 10 && !col.conquistas.find(c => c.nome === 'Invencível')) {
-                    col.conquistas.push({ ...conquistaInvencivel });
+                const notasHistorico = col.historico.filter(entry => entry && entry.tipo === 'nota' && entry.campanha === campanha).map(e => Number(e.valor));
+                if (notasHistorico.length >= 3 && conquistaInvicto) {
+                    const ultimas3 = notasHistorico.slice(-3);
+                    const mediaUltimas3 = ultimas3.reduce((s, v) => s + v, 0) / 3;
+                    if (mediaUltimas3 === 10 && !col.conquistas.find(c => c.nome === 'Invicto' && c.campanha === campanha)) {
+                        col.conquistas.push({ ...conquistaInvicto, campanha });
+                        col.historico.push(criarEntradaHistorico('conquista', 'Invicto', `Conquista Automática: "Invicto" desbloqueada! 3 avaliações perfeitas!`, dataHora, campanha));
+                    }
                 }
-            }
-
-            // Gênio: média das últimas 7 == 10
-            const conquistaGenio = conquistasCadastradas.find(c => c.nome === 'Gênio');
-            if (notasHistorico.length >= 7 && conquistaGenio) {
-                const ultimas7 = notasHistorico.slice(-7);
-                const mediaUltimas7 = ultimas7.reduce((sum, v) => sum + v, 0) / 7;
-                if (mediaUltimas7 === 10 && !col.conquistas.find(c => c.nome === 'Gênio')) {
-                    col.conquistas.push({ ...conquistaGenio });
+                const conquistaInvencivel = conquistasCadastradas.find(c => c.nome === 'Invencível');
+                if (notasHistorico.length >= 5 && conquistaInvencivel) {
+                    const ultimas5 = notasHistorico.slice(-5);
+                    const mediaUltimas5 = ultimas5.reduce((s, v) => s + v, 0) / 5;
+                    if (mediaUltimas5 === 10 && !col.conquistas.find(c => c.nome === 'Invencível' && c.campanha === campanha)) {
+                        col.conquistas.push({ ...conquistaInvencivel, campanha });
+                        col.historico.push(criarEntradaHistorico('conquista', 'Invencível', `Conquista Automática: "Invencível" desbloqueada! 5 avaliações perfeitas!`, dataHora, campanha));
+                    }
                 }
+                const conquistaGenio = conquistasCadastradas.find(c => c.nome === 'Gênio');
+                if (notasHistorico.length >= 7 && conquistaGenio) {
+                    const ultimas7 = notasHistorico.slice(-7);
+                    const mediaUltimas7 = ultimas7.reduce((s, v) => s + v, 0) / 7;
+                    if (mediaUltimas7 === 10 && !col.conquistas.find(c => c.nome === 'Gênio' && c.campanha === campanha)) {
+                        col.conquistas.push({ ...conquistaGenio, campanha });
+                        col.historico.push(criarEntradaHistorico('conquista', 'Gênio', `Conquista Automática: "Gênio" desbloqueada! 7 avaliações perfeitas!`, dataHora, campanha));
+                    }
+                }
+            } else if (notaValor < 10) {
+                col.conquistas = col.conquistas.filter(c => !(c.nome === 'Nota 10' && c.campanha === campanha) && !(c.nome === 'Invicto' && c.campanha === campanha) && !(c.nome === 'Invencível' && c.campanha === campanha) && !(c.nome === 'Gênio' && c.campanha === campanha));
             }
-        } else if (notaValor < 10) {
-            // Remover conquistas relacionadas a notas perfeitas
-            col.conquistas = col.conquistas.filter(c => c.nome !== 'Nota 10' && c.nome !== 'Invicto' && c.nome !== 'Invencível' && c.nome !== 'Gênio');
         }
-    }
 
-    // === Condição de conclusão ===
-    if (conclusao === 'primeiro_dia') {
-        // Adicionar "Super Atento" e "Pontual"
-        if (conquistaSuperAtento && !col.conquistas.find(c => c.nome === 'Super Atento')) {
-            col.conquistas.push({ ...conquistaSuperAtento });
+        if (conclusao === 'primeiro_dia') {
+            if (conquistaSuperAtento && !col.conquistas.find(c => c.nome === 'Super Atento' && c.campanha === campanha)) {
+                col.conquistas.push({ ...conquistaSuperAtento, campanha });
+                col.historico.push(criarEntradaHistorico('conquista', 'Super Atento', `Conquista Automática: "Super Atento" desbloqueada!`, dataHora, campanha));
+            }
+            if (conquistaPontual && !col.conquistas.find(c => c.nome === 'Pontual' && c.campanha === campanha)) {
+                col.conquistas.push({ ...conquistaPontual, campanha });
+                col.historico.push(criarEntradaHistorico('conquista', 'Pontual', `Conquista Automática: "Pontual" desbloqueada!`, dataHora, campanha));
+            }
+        } else if (conclusao === 'no_prazo') {
+            col.conquistas = col.conquistas.filter(c => !(c.nome === 'Super Atento' && c.campanha === campanha));
+            if (conquistaPontual && !col.conquistas.find(c => c.nome === 'Pontual' && c.campanha === campanha)) {
+                col.conquistas.push({ ...conquistaPontual, campanha });
+                col.historico.push(criarEntradaHistorico('conquista', 'Pontual', `Conquista Automática: "Pontual" desbloqueada!`, dataHora, campanha));
+            }
+        } else if (conclusao === 'atrasado') {
+            col.conquistas = col.conquistas.filter(c => !(c.nome === 'Super Atento' && c.campanha === campanha) && !(c.nome === 'Pontual' && c.campanha === campanha));
         }
-        if (conquistaPontual && !col.conquistas.find(c => c.nome === 'Pontual')) {
-            col.conquistas.push({ ...conquistaPontual });
-        }
-    } else if (conclusao === 'no_prazo') {
-        // Remover "Super Atento" e adicionar "Pontual"
-        col.conquistas = col.conquistas.filter(c => c.nome !== 'Super Atento');
-        if (conquistaPontual && !col.conquistas.find(c => c.nome === 'Pontual')) {
-            col.conquistas.push({ ...conquistaPontual });
-        }
-    } else if (conclusao === 'atrasado') {
-        // Remover "Super Atento" e "Pontual"
-        col.conquistas = col.conquistas.filter(c => c.nome !== 'Super Atento' && c.nome !== 'Pontual');
-    }
 
-    // === Conclusão: aplica bônus/malus de acordo com seleção (PUBLICAR POR ÚLTIMO) ===
-    if (conclusao === 'primeiro_dia') {
-        const pontosExtra = 10;
-        col.pontos += pontosExtra;
-        col.historico.push(criarEntradaHistorico('pontos', pontosExtra, '(+10 Pontos) por Concluir curso no mesmo dia', dataHora, campanha));
-    } else if (conclusao === 'atrasado') {
-        const pontosExtra = -10;
-        col.pontos += pontosExtra;
-        col.historico.push(criarEntradaHistorico('pontos', pontosExtra, '(-10 pontos) pelo atraso na realização do curso', dataHora, campanha));
+        if (conclusao === 'primeiro_dia') {
+            const pontosExtra = 10;
+            col.pontos += pontosExtra;
+            col.historico.push(criarEntradaHistorico('pontos', pontosExtra, '(+10 Pontos) por Concluir curso no mesmo dia', dataHora, campanha));
+        } else if (conclusao === 'atrasado') {
+            const pontosExtra = -10;
+            col.pontos += pontosExtra;
+            col.historico.push(criarEntradaHistorico('pontos', pontosExtra, '(-10 pontos) pelo atraso na realização do curso', dataHora, campanha));
+        }
+    };
+
+    // Aplicar para todos os colaboradores ou para 1
+    if (colId === 'todos') {
+        const totalColaboradores = colaboradores.length;
+        const confirma = confirm(`Aplicar o curso selecionado a todos os ${totalColaboradores} colaboradores?`);
+        if (!confirma) return;
+        for (const col of colaboradores) {
+            for (const campanha of campanhasSelecionadas) {
+                aplicarCursoParaColaborador(col, campanha);
+            }
+        }
+    } else {
+        const col = colaboradores.find(c => c.id === colId);
+        if (!col) return;
+        for (const campanha of campanhasSelecionadas) {
+            aplicarCursoParaColaborador(col, campanha);
+        }
     }
 
     // === Salva e atualiza ===
@@ -3037,6 +3347,8 @@ document.getElementById('add-cursos-form').addEventListener('submit', async (e) 
     // Reset do formulário
     document.getElementById('add-cursos-form').reset();
     document.getElementById('pontuar-curso').checked = true;
+    campanhasSelecionadasCursos = [];
+    updateButtonBadge('btn-campanhas-cursos', 0);
 
     // Preenche data/hora atual
     const agora = new Date();
@@ -3053,7 +3365,7 @@ document.getElementById('add-nota-form').addEventListener('submit', async (e) =>
     const colId = col ? col.id : null;
     
     const curso = document.getElementById('curso-nota').value.trim();
-    const campanha = document.getElementById('campanha-nota').value;
+    const campanhasSelecionadas = campanhasSelecionadasNota;
     const nota = parseFloat(document.getElementById('nota-add').value);
     const pontuar = document.getElementById('pontuar-nota').checked;
     const dataInput = document.getElementById('data-nota').value;
@@ -3063,75 +3375,96 @@ document.getElementById('add-nota-form').addEventListener('submit', async (e) =>
         alert('Preencha todos os campos corretamente, incluindo data!');
         return;
     }
-    if (!campanha) {
-        alert('Selecione uma campanha!');
+    if (campanhasSelecionadas.length === 0) {
+        alert('Selecione uma ou mais campanhas!');
         return;
     }
 
     const dataHora = new Date(`${dataInput}T${horaInput}:00`);
+    
+    // Iterar sobre cada campanha selecionada
+    for (const campanha of campanhasSelecionadas) {
         if (col) {
-        col.notas.push(nota);
-        col.historico.push(criarEntradaHistorico('nota', nota, `Nota ${nota} no curso "${curso}"`, dataHora, campanha));
-        if (pontuar) {
-            const pontos = nota * 10;
-            col.pontos += pontos;
-            col.historico.push(criarEntradaHistorico('pontos', pontos, `Ganhou ${pontos} pontos pela nota ${nota} no curso "${curso}"`, dataHora, campanha));
+            col.notas.push(nota);
+            col.historico.push(criarEntradaHistorico('nota', nota, `Nota ${nota} no curso "${curso}"`, dataHora, campanha));
+            if (pontuar) {
+                const pontos = nota * 10;
+                col.pontos += pontos;
+                col.historico.push(criarEntradaHistorico('pontos', pontos, `Ganhou ${pontos} pontos pela nota ${nota} no curso "${curso}"`, dataHora, campanha));
+            }
+
+            // Atualiza conquistas relacionadas a notas perfeitas
+            if (nota < 10) {
+                // Remover todas as conquistas de nota perfeita se a nota atual for menor que 10
+                // Mas apenas da campanha atual (ou sem campanha se nenhuma selecionada)
+                const campanhaAtual = campanha;
+                col.conquistas = col.conquistas.filter(c => 
+                    !(c.nome === 'Nota 10' && (!c.campanha || c.campanha === campanhaAtual)) &&
+                    !(c.nome === 'Invicto' && (!c.campanha || c.campanha === campanhaAtual)) &&
+                    !(c.nome === 'Invencível' && (!c.campanha || c.campanha === campanhaAtual)) &&
+                    !(c.nome === 'Gênio' && (!c.campanha || c.campanha === campanhaAtual))
+                );
+            } else if (nota === 10) {
+                // Adicionar "Nota 10" se existir
+                const conquistaNota10_local = conquistasCadastradas.find(c => c.nome === 'Nota 10');
+                if (conquistaNota10_local && !col.conquistas.find(c => c.nome === 'Nota 10' && c.campanha === campanha)) {
+                    col.conquistas.push({ ...conquistaNota10_local, campanha });
+                    col.historico.push(criarEntradaHistorico('conquista', 'Nota 10',
+                        `Conquista Automática: "Nota 10" desbloqueada!`, dataHora, campanha));
+                }
+
+                // Histórico das notas (após adicionar a nota atual)
+                const notasHistorico = col.historico.filter(entry => entry && entry.tipo === 'nota' && entry.campanha === campanha).map(e => Number(e.valor));
+
+                // Invicto (últimas 3) - apenas quando houver ao menos 3 notas
+                const conquistaInvicto_local = conquistasCadastradas.find(c => c.nome === 'Invicto');
+                if (notasHistorico.length >= 3 && conquistaInvicto_local) {
+                    const ultimas3 = notasHistorico.slice(-3);
+                    const mediaUltimas3 = ultimas3.reduce((s, v) => s + v, 0) / 3;
+                    if (mediaUltimas3 === 10 && !col.conquistas.find(c => c.nome === 'Invicto' && c.campanha === campanha)) {
+                        col.conquistas.push({ ...conquistaInvicto_local, campanha });
+                        col.historico.push(criarEntradaHistorico('conquista', 'Invicto',
+                            `Conquista Automática: "Invicto" desbloqueada! 3 avaliações perfeitas!`, dataHora, campanha));
+                    }
+                }
+
+                // Invencível (últimas 5)
+                const conquistaInvencivel_local = conquistasCadastradas.find(c => c.nome === 'Invencível');
+                if (notasHistorico.length >= 5 && conquistaInvencivel_local) {
+                    const ultimas5 = notasHistorico.slice(-5);
+                    const mediaUltimas5 = ultimas5.reduce((s, v) => s + v, 0) / 5;
+                    if (mediaUltimas5 === 10 && !col.conquistas.find(c => c.nome === 'Invencível' && c.campanha === campanha)) {
+                        col.conquistas.push({ ...conquistaInvencivel_local, campanha });
+                        col.historico.push(criarEntradaHistorico('conquista', 'Invencível',
+                            `Conquista Automática: "Invencível" desbloqueada! 5 avaliações perfeitas!`, dataHora, campanha));
+                    }
+                }
+
+                // Gênio (últimas 7)
+                const conquistaGenio_local = conquistasCadastradas.find(c => c.nome === 'Gênio');
+                if (notasHistorico.length >= 7 && conquistaGenio_local) {
+                    const ultimas7 = notasHistorico.slice(-7);
+                    const mediaUltimas7 = ultimas7.reduce((s, v) => s + v, 0) / 7;
+                    if (mediaUltimas7 === 10 && !col.conquistas.find(c => c.nome === 'Gênio' && c.campanha === campanha)) {
+                        col.conquistas.push({ ...conquistaGenio_local, campanha });
+                        col.historico.push(criarEntradaHistorico('conquista', 'Gênio',
+                            `Conquista Automática: "Gênio" desbloqueada! 7 avaliações perfeitas!`, dataHora, campanha));
+                    }
+                }
+            }
         }
-
-        // Atualiza conquistas relacionadas a notas perfeitas
-        if (nota < 10) {
-            // Remover todas as conquistas de nota perfeita se a nota atual for menor que 10
-            col.conquistas = col.conquistas.filter(c => c.nome !== 'Nota 10' && c.nome !== 'Invicto' && c.nome !== 'Invencível' && c.nome !== 'Gênio');
-        } else if (nota === 10) {
-            // Adicionar "Nota 10" se existir
-            const conquistaNota10_local = conquistasCadastradas.find(c => c.nome === 'Nota 10');
-            if (conquistaNota10_local && !col.conquistas.find(c => c.nome === 'Nota 10')) {
-                col.conquistas.push({ ...conquistaNota10_local });
-            }
-
-            // Histórico das notas (após adicionar a nota atual)
-            const notasHistorico = col.historico.filter(entry => entry && entry.tipo === 'nota').map(e => Number(e.valor));
-
-            // Invicto (últimas 3) - apenas quando houver ao menos 3 notas
-            const conquistaInvicto_local = conquistasCadastradas.find(c => c.nome === 'Invicto');
-            if (notasHistorico.length >= 3 && conquistaInvicto_local) {
-                const ultimas3 = notasHistorico.slice(-3);
-                const mediaUltimas3 = ultimas3.reduce((s, v) => s + v, 0) / 3;
-                if (mediaUltimas3 === 10 && !col.conquistas.find(c => c.nome === 'Invicto')) {
-                    col.conquistas.push({ ...conquistaInvicto_local });
-                }
-            }
-
-            // Invencível (últimas 5)
-            const conquistaInvencivel_local = conquistasCadastradas.find(c => c.nome === 'Invencível');
-            if (notasHistorico.length >= 5 && conquistaInvencivel_local) {
-                const ultimas5 = notasHistorico.slice(-5);
-                const mediaUltimas5 = ultimas5.reduce((s, v) => s + v, 0) / 5;
-                if (mediaUltimas5 === 10 && !col.conquistas.find(c => c.nome === 'Invencível')) {
-                    col.conquistas.push({ ...conquistaInvencivel_local });
-                }
-            }
-
-            // Gênio (últimas 7)
-            const conquistaGenio_local = conquistasCadastradas.find(c => c.nome === 'Gênio');
-            if (notasHistorico.length >= 7 && conquistaGenio_local) {
-                const ultimas7 = notasHistorico.slice(-7);
-                const mediaUltimas7 = ultimas7.reduce((s, v) => s + v, 0) / 7;
-                if (mediaUltimas7 === 10 && !col.conquistas.find(c => c.nome === 'Gênio')) {
-                    col.conquistas.push({ ...conquistaGenio_local });
-                }
-            }
-        }
-
-        await saveData({ colaboradores, cargos: [...cargos], unidades: [...unidades], campanhas: [...campanhas] });
-        document.getElementById('add-nota-form').reset();
-        document.getElementById('pontuar-nota').checked = true;
-        const agora = new Date();
-        document.getElementById('data-nota').value = agora.toISOString().split('T')[0];
-        document.getElementById('hora-nota').value = agora.toTimeString().slice(0, 5);
-        updateHistoricoNotas();
-        updateRanking();
     }
+
+    await saveData({ colaboradores, cargos: [...cargos], unidades: [...unidades], campanhas: [...campanhas] });
+    document.getElementById('add-nota-form').reset();
+    document.getElementById('pontuar-nota').checked = true;
+    campanhasSelecionadasNota = [];
+    updateButtonBadge('btn-campanhas-nota', 0);
+    const agora = new Date();
+    document.getElementById('data-nota').value = agora.toISOString().split('T')[0];
+    document.getElementById('hora-nota').value = agora.toTimeString().slice(0, 5);
+    updateHistoricoNotas();
+    updateRanking();
 });
 
 document.getElementById('colaborador-cursos').addEventListener('change', () => {
@@ -3204,7 +3537,7 @@ document.getElementById('colaborador-cursos').addEventListener('change', () => {
         const colId = getColaboradorId('colaborador-pontos');
         const historicoDiv = document.getElementById('historico-pontos');
         historicoDiv.innerHTML = '';
-        const campanhaSel = document.getElementById('campanha-pontos') ? document.getElementById('campanha-pontos').value : '';
+        const campanhasSel = campanhasSelecionadasPontos || [];
         if (colId) {
             const col = colaboradores.find(c => c.id === colId);
             if (col) {
@@ -3212,7 +3545,7 @@ document.getElementById('colaborador-cursos').addEventListener('change', () => {
                 frame.classList.add('history-frame');
                 const ul = document.createElement('ul2');
                 col.historico
-                    .filter(h => h.tipo === 'pontos' && (!campanhaSel || campanhaSel === 'geral' || h.campanha === campanhaSel))
+                    .filter(h => h.tipo === 'pontos' && (campanhasSel.length === 0 || campanhasSel.includes(h.campanha)))
                     .slice(0, 10).reverse().forEach((entry, idx) => {
                         const li = document.createElement('li');
                         li.classList.add('history-item');
@@ -3289,15 +3622,15 @@ function updateHistoricoCursos() {
     const colId = getColaboradorId('colaborador-cursos');
     const historicoDiv = document.getElementById('historico-cursos');
     historicoDiv.innerHTML = '';
+    const campanhasSel = campanhasSelecionadasCursos || [];
     if (colId) {
         const col = colaboradores.find(c => c.id === colId);
         if (col) {
             const frame = document.createElement('div');
             frame.classList.add('history-frame');
             const ul = document.createElement('ul1');
-            const campanhaSel = document.getElementById('campanha-cursos') ? document.getElementById('campanha-cursos').value : '';
 
-            // Unificar cursos duplicados para exibição considerando campanha selecionada
+            // Unificar cursos duplicados para exibição considerando campanhas selecionadas
             const cursosUnificados = [];
             const cursosIndices = [];
             const cursosVistos = new Set();
@@ -3305,7 +3638,7 @@ function updateHistoricoCursos() {
             if (Array.isArray(col.historico)) {
                 col.historico.forEach((entry, idx) => {
                     if (!entry || entry.tipo !== 'curso') return;
-                    if (campanhaSel && campanhaSel !== 'geral' && entry.campanha !== campanhaSel) return;
+                    if (campanhasSel.length > 0 && !campanhasSel.includes(entry.campanha)) return;
                     const curso = col.cursos.find(c => c.nome === entry.valor);
                     if (curso && !cursosVistos.has(curso.nome)) {
                         cursosUnificados.push(curso);
@@ -3342,7 +3675,7 @@ function updateHistoricoNotas() {
     const colId = getColaboradorId('colaborador-nota');
     const historicoDiv = document.getElementById('historico-notas');
     historicoDiv.innerHTML = '';
-    const campanhaSel = document.getElementById('campanha-nota') ? document.getElementById('campanha-nota').value : '';
+    const campanhasSel = campanhasSelecionadasNota || [];
     if (colId) {
         const col = colaboradores.find(c => c.id === colId);
         if (col) {
@@ -3350,7 +3683,7 @@ function updateHistoricoNotas() {
             frame.classList.add('history-frame');
             const ul = document.createElement('ul2');
             col.historico
-                .filter(h => h.tipo === 'nota' && (!campanhaSel || campanhaSel === 'geral' || h.campanha === campanhaSel))
+                .filter(h => h.tipo === 'nota' && (campanhasSel.length === 0 || campanhasSel.includes(h.campanha)))
                 .slice(0, 10).reverse().forEach((entry, idx) => {
                     const li = document.createElement('li');
                     li.classList.add('history-item');
@@ -3539,6 +3872,9 @@ function updateCursosNotaSelect() {
             closeEditCursoModal();
             closeEditHistoricoModal();
             closePasswordModal();
+        }
+        if (event.target.classList.contains('campainha-selector-modal')) {
+            closeCampanhaSelector();
         }
     };
 
@@ -4028,23 +4364,87 @@ function updateCampanhasList() {
 }
 
 function updateCampanhasSelects() {
-    const selects = [
-        document.getElementById('campanha-pontos'),
-        document.getElementById('campanha-cursos'),
-        document.getElementById('campanha-nota')
-    ];
+    // Esta função agora é mantida para compatibilidade, mas não faz nada
+    // As campanhas são gerenciadas pelo modal de seleção
+}
 
-    selects.forEach(select => {
-        if (select) {
-            select.innerHTML = '<option value="">Selecione uma campanha</option>';
-            [...campanhas].sort((a, b) => a.localeCompare(b)).forEach(campanha => {
-                const option = document.createElement('option');
-                option.value = campanha;
-                option.textContent = campanha;
-                select.appendChild(option);
-            });
-        }
+// Variáveis globais para armazenar as campanhas selecionadas
+let campanhasSelecionadasPontos = [];
+let campanhasSelecionadasCursos = [];
+let campanhasSelecionadasNota = [];
+let currentCampanhaModalTab = null;
+
+function openCampanhaSelector(tab) {
+    currentCampanhaModalTab = tab;
+    const modal = document.getElementById('campainha-selector-modal');
+    const container = document.getElementById('campainha-list-container');
+    
+    container.innerHTML = '';
+    
+    // Recuperar seleções anteriores
+    let previousSelections = [];
+    if (tab === 'pontos') previousSelections = campanhasSelecionadasPontos;
+    else if (tab === 'cursos') previousSelections = campanhasSelecionadasCursos;
+    else if (tab === 'nota') previousSelections = campanhasSelecionadasNota;
+    
+    // Criar checkboxes para cada campanha
+    [...campanhas].sort((a, b) => a.localeCompare(b)).forEach(campanha => {
+        const item = document.createElement('div');
+        item.className = 'campainha-item';
+        item.innerHTML = `
+            <input type="checkbox" id="campanha-${campanha}" value="${campanha}" ${previousSelections.includes(campanha) ? 'checked' : ''}>
+            <label for="campanha-${campanha}">${campanha}</label>
+        `;
+        container.appendChild(item);
     });
+    
+    modal.classList.add('active');
+}
+
+function closeCampanhaSelector() {
+    const modal = document.getElementById('campainha-selector-modal');
+    modal.classList.remove('active');
+}
+
+function confirmCampanhaSelection() {
+    const checkboxes = document.querySelectorAll('#campainha-list-container input[type="checkbox"]');
+    const selecionadas = Array.from(checkboxes).filter(cb => cb.checked).map(cb => cb.value);
+    
+    // Permitir confirmar com 0 campanhas para limpar o filtro
+    // Armazenar seleções
+    if (currentCampanhaModalTab === 'pontos') {
+        campanhasSelecionadasPontos = selecionadas;
+        updateButtonBadge('btn-campanhas-pontos', selecionadas.length);
+        updateHistoricoPontos(); // Atualizar filtro
+    } else if (currentCampanhaModalTab === 'cursos') {
+        campanhasSelecionadasCursos = selecionadas;
+        updateButtonBadge('btn-campanhas-cursos', selecionadas.length);
+        updateHistoricoCursos(); // Atualizar filtro
+    } else if (currentCampanhaModalTab === 'nota') {
+        campanhasSelecionadasNota = selecionadas;
+        updateButtonBadge('btn-campanhas-nota', selecionadas.length);
+        updateHistoricoNotas(); // Atualizar filtro
+    }
+    
+    closeCampanhaSelector();
+}
+
+function updateButtonBadge(buttonId, count) {
+    const button = document.getElementById(buttonId);
+    let badge = button.querySelector('.badge');
+    
+    if (count > 0) {
+        if (!badge) {
+            badge = document.createElement('span');
+            badge.className = 'badge';
+            button.appendChild(badge);
+        }
+        badge.textContent = count;
+    } else {
+        if (badge) {
+            badge.remove();
+        }
+    }
 }
 
 async function editCampanha(campanha) {
@@ -4106,13 +4506,14 @@ async function migrarRegistrosSemCampanha() {
     
     let registrosMigrados = 0;
     let detalhesMigracao = {};
-    let tiposCorrecao = { semCampanha: 0, campanhaInvalida: 0 };
+    let tiposCorrecao = { semCampanha: 0, campanhaInvalida: 0, conquistasSemCampanha: 0 };
     
     colaboradores.forEach(col => {
+        // === CORRIGIR HISTÓRICO SEM CAMPANHA ===
         if (col.historico) {
             col.historico.forEach(entry => {
                 // Verifica se é um tipo de registro que deve ter campanha
-                if (entry.tipo === 'pontos' || entry.tipo === 'curso' || entry.tipo === 'nota') {
+                if (entry.tipo === 'pontos' || entry.tipo === 'curso' || entry.tipo === 'nota' || entry.tipo === 'conquista') {
                     let precisaMigrar = false;
                     let motivo = '';
                     
@@ -4143,12 +4544,30 @@ async function migrarRegistrosSemCampanha() {
                 }
             });
         }
+
+        // === CORRIGIR CONQUISTAS SEM CAMPANHA ===
+        if (col.conquistas && Array.isArray(col.conquistas)) {
+            col.conquistas.forEach(conq => {
+                if (!conq.campanha) {
+                    conq.campanha = primeiraCampanha;
+                    tiposCorrecao.conquistasSemCampanha++;
+                    registrosMigrados++;
+                    
+                    if (!detalhesMigracao[col.nome]) {
+                        detalhesMigracao[col.nome] = { total: 0, detalhes: [] };
+                    }
+                    detalhesMigracao[col.nome].total++;
+                    detalhesMigracao[col.nome].detalhes.push(`Conquista "${conq.nome}" atribuída à ${primeiraCampanha}`);
+                }
+            });
+        }
     });
 
     if (registrosMigrados > 0) {
         const confirmacao = confirm(`Deseja migrar ${registrosMigrados} registros para "${primeiraCampanha}"?\n\n` +
-            `• ${tiposCorrecao.semCampanha} registros sem campanha\n` +
-            `• ${tiposCorrecao.campanhaInvalida} registros com campanhas inválidas\n\n` +
+            `• ${tiposCorrecao.semCampanha} registros de histórico sem campanha\n` +
+            `• ${tiposCorrecao.campanhaInvalida} registros com campanhas inválidas\n` +
+            `• ${tiposCorrecao.conquistasSemCampanha} conquistas sem campanha\n\n` +
             `Esta ação não pode ser desfeita.`);
         
         if (!confirmacao) return;
@@ -4159,8 +4578,9 @@ async function migrarRegistrosSemCampanha() {
         mensagem += `Total de registros migrados: ${registrosMigrados}\n`;
         mensagem += `Campanha de destino: ${primeiraCampanha}\n\n`;
         mensagem += `Tipos de correção:\n`;
-        mensagem += `• Registros sem campanha: ${tiposCorrecao.semCampanha}\n`;
-        mensagem += `• Registros com campanhas inválidas: ${tiposCorrecao.campanhaInvalida}\n\n`;
+        mensagem += `• Registros de histórico sem campanha: ${tiposCorrecao.semCampanha}\n`;
+        mensagem += `• Registros com campanhas inválidas: ${tiposCorrecao.campanhaInvalida}\n`;
+        mensagem += `• Conquistas sem campanha: ${tiposCorrecao.conquistasSemCampanha}\n\n`;
         mensagem += `Detalhes por colaborador:\n`;
         
         Object.entries(detalhesMigracao).forEach(([nome, dados]) => {
@@ -4173,6 +4593,8 @@ async function migrarRegistrosSemCampanha() {
         updateCampanhasSelects();
         updateFilters();
         verificarCampanhasInvalidas();
+        updateColaboradoresList();
+        updateRanking();
     } else {
         alert('ℹ️ Nenhum registro encontrado para migrar. Todos os registros já possuem campanhas válidas associadas.');
     }
@@ -4191,13 +4613,23 @@ function verificarCampanhasInvalidas() {
     let temInvalidos = false;
     
     colaboradores.forEach(col => {
+        // === Verificar histórico inválido ===
         if (col.historico && !temInvalidos) {
             col.historico.forEach(entry => {
-                if (entry && (entry.tipo === 'pontos' || entry.tipo === 'curso' || entry.tipo === 'nota')) {
+                if (entry && (entry.tipo === 'pontos' || entry.tipo === 'curso' || entry.tipo === 'nota' || entry.tipo === 'conquista')) {
                     // Verifica se falta campanha ou tem campanha inválida
                     if (!entry.campanha || !campanhasValidas.has(entry.campanha)) {
                         temInvalidos = true;
                     }
+                }
+            });
+        }
+
+        // === Verificar conquistas sem campanha ===
+        if (col.conquistas && !temInvalidos) {
+            col.conquistas.forEach(conq => {
+                if (!conq.campanha) {
+                    temInvalidos = true;
                 }
             });
         }
