@@ -616,6 +616,15 @@
             opacity: 0.95;
             color: #DCE6F2;
         }
+        .course-realizations {
+            display: block;
+            font-size: 12px;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid rgba(255, 255, 255, 0.3);
+            line-height: 1.5;
+            color: #DCE6F2;
+        }
         .history-item {
             display: flex;
             justify-content: space-between;
@@ -2165,9 +2174,8 @@ function openModal(col, filtroCampanha, filtroAno, filtroMes, dataInicioInput, d
     const cursosDiv = document.getElementById('modal-cursos');
     cursosDiv.innerHTML = '';
     
-    // Unificar cursos duplicados para exibição, filtrando por campanha/período
-    const cursosDaCampanha = [];
-    const cursosVistos = new Set();
+    // Coletar cursos com datas e notas de cada realização, filtrando por campanha/período
+    const cursoRealizacoes = {}; // { nomeCurso: { curso, realizacoes: [{data, hora, nota}], count } }
     if (Array.isArray(col.historico)) {
         col.historico.forEach(entry => {
             if (!entry || entry.tipo !== 'curso') return;
@@ -2191,20 +2199,43 @@ function openModal(col, filtroCampanha, filtroAno, filtroMes, dataInicioInput, d
 
             if (incluir) {
                 const curso = col.cursos.find(c => c.nome === entry.valor);
-                if (curso && !cursosVistos.has(curso.nome)) {
-                    cursosDaCampanha.push(curso);
-                    cursosVistos.add(curso.nome);
+                if (curso) {
+                    if (!cursoRealizacoes[curso.nome]) {
+                        cursoRealizacoes[curso.nome] = { curso, realizacoes: [], count: 0 };
+                    }
+                    // Buscar nota correspondente no histórico
+                    let notaValue = '';
+                    const notaEntry = col.historico.find(h => h.tipo === 'nota' && h.descricao && h.descricao.includes(curso.nome) && h.data === entry.data);
+                    if (notaEntry) {
+                        notaValue = notaEntry.valor;
+                    }
+                    cursoRealizacoes[curso.nome].realizacoes.push({
+                        data: entry.data,
+                        hora: entry.hora || '',
+                        nota: notaValue
+                    });
+                    cursoRealizacoes[curso.nome].count++;
                 }
             }
         });
     }
 
-    cursosDaCampanha.forEach(curso => {
+    Object.values(cursoRealizacoes).forEach(item => {
+        const curso = item.curso;
+        const count = item.count;
+        const realizacoes = item.realizacoes;
+        
         const div = document.createElement('div');
         div.classList.add('achievement-card');
         div.style.background = `linear-gradient(to bottom, ${curso.cor}, ${curso.cor})`;
         div.style.color = isDarkColor(curso.cor) ? '#ffffff' : '#000000';
-        div.innerHTML = `<i class="${curso.icone} achievement-icon"></i> ${curso.nome}<span class="achievement-description">${curso.descricao || ''}</span>`;
+        
+        // Monta lista de datas e notas para tooltip
+        const detalhesRealizacoes = realizacoes
+            .map(r => `${r.data}${r.hora ? ' ' + r.hora : ''}${r.nota ? ' — Nota: ' + r.nota : ''}`)
+            .join('<br>');
+        
+        div.innerHTML = `<i class="${curso.icone} achievement-icon"></i> ${curso.nome} (${count})<span class="achievement-description">${curso.descricao || ''}<div class="course-realizations">${detalhesRealizacoes}</div></span>`;
         cursosDiv.appendChild(div);
     });
 
