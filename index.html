@@ -1109,6 +1109,10 @@
                 <input type="text" id="colaborador-conquista" placeholder="Buscar colaborador..." list="colaboradores-list-conquista" required onchange="updateHistoricoConquistas()">
                 <datalist id="colaboradores-list-conquista"></datalist>
                 <select id="conquista-select" required onchange="updateConquistaSelectPreview()"></select>
+                <button type="button" id="btn-campanhas-conquista" class="btn-select-campanhas" onclick="openCampanhaSelector('conquista')">
+                    <i class="fas fa-checkbox"></i>
+                    Selecionar Campanhas
+                </button>
                 <center>
                     <div class="datahora">
                         <input type="date" id="data-conquista">
@@ -3209,14 +3213,20 @@ document.getElementById('add-conquista-form').addEventListener('submit', async (
         return;
     }
 
+    if (campanhasSelecionadasConquista.length === 0) {
+        alert('Selecione pelo menos uma campanha!');
+        return;
+    }
+
     const dataHora = new Date(`${dataInput}T${horaInput}:00`);
-    const primeiraCampanha = [...campanhas].sort((a, b) => a.localeCompare(b))[0];
 
     if (col) {
-        // Conquistas agora incluem referência de campanha
-        col.conquistas.push({ ...conquista, campanha: primeiraCampanha });
-        col.historico.push(criarEntradaHistorico('conquista', conquista.nome,
-            `Conquista: "${conquista.nome}"`, dataHora, primeiraCampanha));
+        // Adicionar conquista em cada campanha selecionada
+        for (const campanha of campanhasSelecionadasConquista) {
+            col.conquistas.push({ ...conquista, campanha });
+            col.historico.push(criarEntradaHistorico('conquista', conquista.nome,
+                `Conquista: "${conquista.nome}"`, dataHora, campanha));
+        }
 
         await saveData();
 
@@ -3225,6 +3235,10 @@ document.getElementById('add-conquista-form').addEventListener('submit', async (
         const agora = new Date();
         document.getElementById('data-conquista').value = agora.toISOString().split('T')[0];
         document.getElementById('hora-conquista').value = agora.toTimeString().slice(0, 5);
+        
+        // Reset campanhas selecionadas e badge
+        campanhasSelecionadasConquista = [];
+        updateButtonBadge('btn-campanhas-conquista', 0);
 
         updateHistoricoConquistas();
         updateRanking();
@@ -4104,6 +4118,7 @@ function updateConquistaSelect() {
         opt.textContent = c.nome;
         sel.appendChild(opt);
     });
+    
     updateConquistaSelectPreview();
 }
 function updateConquistaSelectPreview() {
@@ -4403,6 +4418,7 @@ function updateCampanhasSelects() {
 let campanhasSelecionadasPontos = [];
 let campanhasSelecionadasCursos = [];
 let campanhasSelecionadasNota = [];
+let campanhasSelecionadasConquista = [];
 let currentCampanhaModalTab = null;
 
 function openCampanhaSelector(tab) {
@@ -4417,6 +4433,7 @@ function openCampanhaSelector(tab) {
     if (tab === 'pontos') previousSelections = campanhasSelecionadasPontos;
     else if (tab === 'cursos') previousSelections = campanhasSelecionadasCursos;
     else if (tab === 'nota') previousSelections = campanhasSelecionadasNota;
+    else if (tab === 'conquista') previousSelections = campanhasSelecionadasConquista;
     
     // Criar checkboxes para cada campanha
     [...campanhas].sort((a, b) => a.localeCompare(b)).forEach(campanha => {
@@ -4455,6 +4472,9 @@ function confirmCampanhaSelection() {
         campanhasSelecionadasNota = selecionadas;
         updateButtonBadge('btn-campanhas-nota', selecionadas.length);
         updateHistoricoNotas(); // Atualizar filtro
+    } else if (currentCampanhaModalTab === 'conquista') {
+        campanhasSelecionadasConquista = selecionadas;
+        updateButtonBadge('btn-campanhas-conquista', selecionadas.length);
     }
     
     closeCampanhaSelector();
