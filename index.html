@@ -123,11 +123,18 @@
         }
         .filters {
             display: flex;
-            justify-content: center;
+            flex-direction: column;
+            align-items: center;
             gap: 10px;
             margin-bottom: 40px;
             max-width: 650px;
             margin: 0 auto;
+        }
+        .filters-row {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
         }
         .filter select {
             padding: 10px;
@@ -902,46 +909,48 @@
         <h1 class="center">Ranking de Pontos</h1>
         <div class="filters">
             <div class="filter">
-                <label>Selecionar Campanha: </label>
+                <label></label>
                 <select id="filtro-campanha" onchange="updateRanking()">
                     <option value="">Selecione uma campanha</option>
                 </select>
             </div>
-            <div class="filter">
-                <label>Visualizar por Cargo: </label>
-                <select id="filtro-cargo" onchange="updateRanking()">
-                    <option value="geral">Geral</option>
-                </select>
-            </div>
-            <div class="filter">
-                <label>Visualizar por Unidade: </label>
-                <select id="filtro-unidade" onchange="updateRanking()">
-                    <option value="geral">Geral</option>
-                </select>
-            </div>
-            <div class="filter">
-                <label>Visualizar por Ano: </label>
-                <select id="filtro-ano" onchange="updateMesFilter()">
-                    <option value="todos">Todos</option>
-                </select>
-            </div>
-            <div class="filter">
-                <label>Visualizar por Mês: </label>
-                <select id="filtro-mes" onchange="updateRanking()" disabled>
-                    <option value="todos">Todos</option>
-                    <option value="01">Janeiro</option>
-                    <option value="02">Fevereiro</option>
-                    <option value="03">Março</option>
-                    <option value="04">Abril</option>
-                    <option value="05">Maio</option>
-                    <option value="06">Junho</option>
-                    <option value="07">Julho</option>
-                    <option value="08">Agosto</option>
-                    <option value="09">Setembro</option>
-                    <option value="10">Outubro</option>
-                    <option value="11">Novembro</option>
-                    <option value="12">Dezembro</option>
-                </select>
+            <div class="filters-row">
+                <div class="filter">
+                    <label>Visualizar por Cargo: </label>
+                    <select id="filtro-cargo" onchange="updateRanking()">
+                        <option value="geral">Geral</option>
+                    </select>
+                </div>
+                <div class="filter">
+                    <label>Visualizar por Unidade: </label>
+                    <select id="filtro-unidade" onchange="updateRanking()">
+                        <option value="geral">Geral</option>
+                    </select>
+                </div>
+                <div class="filter">
+                    <label>Visualizar por Ano: </label>
+                    <select id="filtro-ano" onchange="updateMesFilter()">
+                        <option value="todos">Todos</option>
+                    </select>
+                </div>
+                <div class="filter">
+                    <label>Visualizar por Mês: </label>
+                    <select id="filtro-mes" onchange="updateRanking()" disabled>
+                        <option value="todos">Todos</option>
+                        <option value="01">Janeiro</option>
+                        <option value="02">Fevereiro</option>
+                        <option value="03">Março</option>
+                        <option value="04">Abril</option>
+                        <option value="05">Maio</option>
+                        <option value="06">Junho</option>
+                        <option value="07">Julho</option>
+                        <option value="08">Agosto</option>
+                        <option value="09">Setembro</option>
+                        <option value="10">Outubro</option>
+                        <option value="11">Novembro</option>
+                        <option value="12">Dezembro</option>
+                    </select>
+                </div>
             </div>
         </div>
         <h2 class="leaders-title">Líderes</h2>
@@ -3799,9 +3808,15 @@ function updateAnoFilter() {
         anoSelect.appendChild(option);
     }
 
+    // ao gerar opções, definimos o ano atual como valor selecionado por padrão
+    anoSelect.value = currentYear.toString();
+
     // Remove container antigo (se existir)
     const oldContainer = document.getElementById('manual-date-range');
     if (oldContainer) oldContainer.remove();
+
+    // atualizar o filtro de mês para habilitar/desabilitar conforme necessário
+    updateMesFilter();
 
     // Cria container para seleção manual (em coluna)
     const dateContainer = document.createElement('div');
