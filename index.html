@@ -2209,7 +2209,7 @@ function openModal(col, filtroCampanha, filtroAno, filtroMes, dataInicioInput, d
                     }
                     // Buscar nota correspondente no histórico
                     let notaValue = '';
-                    const notaEntry = col.historico.find(h => h.tipo === 'nota' && h.descricao && h.descricao.includes(curso.nome) && h.data === entry.data);
+                    const notaEntry = col.historico.find(h => h.tipo === 'nota' && h.descricao && h.descricao.includes(curso.nome) && h.data === entry.data && h.hora === entry.hora);
                     if (notaEntry) {
                         notaValue = notaEntry.valor;
                     }
