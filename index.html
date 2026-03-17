@@ -1144,7 +1144,7 @@
                     Selecionar Campanhas
                 </button>
                 <div class="nota-container" style="display:flex; align-items:center; gap:8px;">
-                    <input type="number" id="nota-curso" placeholder="Nota (0-10)" min="0" max="10" step="0.1" style="width:15%;">
+                    <input type="number" id="nota-curso" placeholder="Nota (0-10)" min="0" max="10" step="0.1" style="width:15%;" onchange="verificarNotaCurso(this.value)">
                     <select id="conclusao-curso" style="flex:1; min-width:30px;">
                         <option value="no_prazo">No prazo (Padrão)</option>
                         <option value="primeiro_dia">Primeiro dia</option>
@@ -1174,7 +1174,7 @@
                     Selecionar Campanhas
                 </button>
                 <div class="nota-container">
-                    <input type="number" id="nota-add" placeholder="Nota da Prova (0-10)" min="0" max="10" step="0.1" required>
+                    <input type="number" id="nota-add" placeholder="Nota da Prova (0-10)" min="0" max="10" step="0.1" required onchange="verificarNotaProva(this.value)">
                     <label style="margin-left: 20px;">Pontuar: <input type="checkbox" id="pontuar-nota" checked></label>
                 </div>
                 <button type="submit">Adicionar Nota</button>
@@ -2245,7 +2245,13 @@ function openModal(col, filtroCampanha, filtroAno, filtroMes, dataInicioInput, d
         
         // Monta lista de datas e notas para tooltip
         const detalhesRealizacoes = realizacoes
-            .map(r => `${r.data}${r.hora ? ' ' + r.hora : ''}${r.nota ? ' — Nota: ' + r.nota : ''}`)
+            .map(r => {
+                let notaText = r.nota ? ` — Nota: ${r.nota}` : '';
+                if (r.nota && r.nota < 8) {
+                    notaText += ' ❌';
+                }
+                return `${r.data}${r.hora ? ' ' + r.hora : ''}${notaText}`;
+            })
             .join('<br>');
         
         div.innerHTML = `<i class="${curso.icone} achievement-icon"></i> ${curso.nome} (${count})<span class="achievement-description">${curso.descricao || ''}<div class="course-realizations">${detalhesRealizacoes}</div></span>`;
@@ -3290,12 +3296,18 @@ document.getElementById('add-cursos-form').addEventListener('submit', async (e) 
     const aplicarCursoParaColaborador = (col, campanha) => {
         // Adiciona curso
         col.cursos.push({ ...curso });
-        col.historico.push(criarEntradaHistorico('curso', curso.nome, `Curso: "${curso.nome}"`, dataHora, campanha));
+        const cursoDescricao = notaValor !== null && notaValor < 8 
+            ? `Curso: "${curso.nome}" (Reprovado)` 
+            : `Curso: "${curso.nome}"`;
+        col.historico.push(criarEntradaHistorico('curso', curso.nome, cursoDescricao, dataHora, campanha));
 
         // Nota e pontuação
         if (notaValor !== null) {
             col.notas.push(notaValor);
-            col.historico.push(criarEntradaHistorico('nota', notaValor, `Nota ${notaValor} no curso: "${curso.nome}"`, dataHora, campanha));
+            const notaDescricao = notaValor < 8 
+                ? `Nota ${notaValor} no curso: "${curso.nome}" (Reprovado)`
+                : `Nota ${notaValor} no curso: "${curso.nome}"`;
+            col.historico.push(criarEntradaHistorico('nota', notaValor, notaDescricao, dataHora, campanha));
             if (pontuar) {
                 const pontos = notaValor * 10;
                 col.pontos += pontos;
@@ -3440,7 +3452,10 @@ document.getElementById('add-nota-form').addEventListener('submit', async (e) =>
     for (const campanha of campanhasSelecionadas) {
         if (col) {
             col.notas.push(nota);
-            col.historico.push(criarEntradaHistorico('nota', nota, `Nota ${nota} no curso "${curso}"`, dataHora, campanha));
+            const notaDescricao = nota < 8 
+                ? `Nota ${nota} no curso "${curso}" (Reprovado)`
+                : `Nota ${nota} no curso "${curso}"`;
+            col.historico.push(criarEntradaHistorico('nota', nota, notaDescricao, dataHora, campanha));
             if (pontuar) {
                 const pontos = nota * 10;
                 col.pontos += pontos;
@@ -3975,6 +3990,29 @@ function criarEntradaHistorico(tipo, valor, descricao, data = null, campanha = n
         hora: dataHora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
         timestamp: dataHora.getTime()  // Para ordenação precisa
     };
+}
+
+// Funções para verificar notas e desmarcar pontuação automaticamente
+function verificarNotaCurso(valor) {
+    const nota = parseFloat(valor);
+    const checkboxPt = document.getElementById('pontuar-curso');
+    
+    if (!isNaN(nota) && nota < 8) {
+        checkboxPt.checked = false;
+    } else if (!isNaN(nota) && nota >= 8) {
+        checkboxPt.checked = true;
+    }
+}
+
+function verificarNotaProva(valor) {
+    const nota = parseFloat(valor);
+    const checkboxPontuar = document.getElementById('pontuar-nota');
+    
+    if (!isNaN(nota) && nota < 8) {
+        checkboxPontuar.checked = false;
+    } else if (!isNaN(nota) && nota >= 8) {
+        checkboxPontuar.checked = true;
+    }
 }
 
 const agoraInit = new Date();
