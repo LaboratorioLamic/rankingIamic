@@ -3413,6 +3413,7 @@ document.getElementById('add-cursos-form').addEventListener('submit', async (e) 
     // Reset do formulário
     document.getElementById('add-cursos-form').reset();
     document.getElementById('pontuar-curso').checked = true;
+    document.getElementById('pontuar-curso').disabled = false;
     campanhasSelecionadasCursos = [];
     updateButtonBadge('btn-campanhas-cursos', 0);
 
@@ -3527,6 +3528,7 @@ document.getElementById('add-nota-form').addEventListener('submit', async (e) =>
     await saveData({ colaboradores, cargos: [...cargos], unidades: [...unidades], campanhas: [...campanhas] });
     document.getElementById('add-nota-form').reset();
     document.getElementById('pontuar-nota').checked = true;
+    document.getElementById('pontuar-nota').disabled = false;
     campanhasSelecionadasNota = [];
     updateButtonBadge('btn-campanhas-nota', 0);
     const agora = new Date();
@@ -3999,8 +4001,13 @@ function verificarNotaCurso(valor) {
     
     if (!isNaN(nota) && nota < 8) {
         checkboxPt.checked = false;
+        checkboxPt.disabled = true;
     } else if (!isNaN(nota) && nota >= 8) {
+        checkboxPt.disabled = false;
         checkboxPt.checked = true;
+    } else {
+        // Se o campo estiver vazio, remove o disabled
+        checkboxPt.disabled = false;
     }
 }
 
@@ -4010,8 +4017,13 @@ function verificarNotaProva(valor) {
     
     if (!isNaN(nota) && nota < 8) {
         checkboxPontuar.checked = false;
+        checkboxPontuar.disabled = true;
     } else if (!isNaN(nota) && nota >= 8) {
+        checkboxPontuar.disabled = false;
         checkboxPontuar.checked = true;
+    } else {
+        // Se o campo estiver vazio, remove o disabled
+        checkboxPontuar.disabled = false;
     }
 }
 
