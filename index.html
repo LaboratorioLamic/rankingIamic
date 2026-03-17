@@ -2042,6 +2042,9 @@ function updateRanking() {
             conquistasDaCampanha.push(...col.conquistas);
         }
 
+        // Ordenar conquistas alfabeticamente pelo nome
+        conquistasDaCampanha.sort((a, b) => a.nome.localeCompare(b.nome));
+
         let conquistasHTML = '<div class="achievements-ranking">';
         conquistasDaCampanha.forEach(conq => {
             conquistasHTML += `<div class="achievement-icon-ranking">
@@ -2073,6 +2076,9 @@ function updateRanking() {
                 cursosVistos.add(curso.nome);
             }
         });
+        
+        // Ordenar cursos unificados alfabeticamente pelo nome
+        cursosUnificados.sort((a, b) => a.nome.localeCompare(b.nome));
         
         let cursosHTML = '<div class="cursos-ranking">';
         cursosUnificados.forEach(curso => {
@@ -2175,6 +2181,9 @@ function openModal(col, filtroCampanha, filtroAno, filtroMes, dataInicioInput, d
         conquistasDaCampanha.push(...col.conquistas);
     }
 
+    // Ordenar conquistas alfabeticamente pelo nome
+    conquistasDaCampanha.sort((a, b) => a.nome.localeCompare(b.nome));
+
     conquistasDaCampanha.forEach(conq => {
         const div = document.createElement('div');
         div.classList.add('achievement-card');
@@ -2233,7 +2242,10 @@ function openModal(col, filtroCampanha, filtroAno, filtroMes, dataInicioInput, d
         });
     }
 
-    Object.values(cursoRealizacoes).forEach(item => {
+    // Ordenar cursos alfabeticamente pelo nome
+    const cursosOrdenados = Object.values(cursoRealizacoes).sort((a, b) => a.curso.nome.localeCompare(b.curso.nome));
+
+    cursosOrdenados.forEach(item => {
         const curso = item.curso;
         const count = item.count;
         const realizacoes = item.realizacoes;
