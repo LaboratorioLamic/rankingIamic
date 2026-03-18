@@ -976,6 +976,7 @@
             <button class="sub-tab-button" onclick="openSubTab('cadastro-conquistas')">Conquistas</button>
         <button class="sub-tab-button" onclick="openSubTab('cadastro-cursos')">Cursos</button>
         <button class="sub-tab-button" onclick="openSubTab('cadastro-campanhas')">Campanhas</button>
+        <button class="sub-tab-button" onclick="openSubTab('cadastro-backup')">Backup</button>
         </div>
 
         <div id="cadastro-colaboradores" class="sub-tab-content active">
@@ -1373,9 +1374,68 @@
         </div>
     </div>
 
+    <div id="cadastro-backup" class="sub-tab-content">
+        <div class="frame">
+            <h2 class="center">Backup Manual de Dados</h2>
+            <p style="text-align: center; margin-bottom: 30px; color: #E0E7F0;">
+                Envie uma cópia completa dos dados do sistema para o bin de backup dedicado.
+            </p>
+            
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 20px;">
+                <button onclick="downloadBackup()" style="
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    color: white;
+                    border: none;
+                    padding: 15px 30px;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    font-size: 16px;
+                    font-weight: 600;
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    transition: all 0.3s ease;
+                    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+                " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(102, 126, 234, 0.5)'" 
+                   onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(102, 126, 234, 0.3)'">
+                    <i class="fas fa-upload"></i>
+                    Enviar Backup Completo
+                </button>
+                
+                <button onclick="loadBackup()" style="
+                    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+                    color: white;
+                    border: none;
+                    padding: 15px 30px;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    font-size: 16px;
+                    font-weight: 600;
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    transition: all 0.3s ease;
+                    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+                " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(40, 167, 69, 0.5)'" 
+                   onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(40, 167, 69, 0.3)'">
+                    <i class="fas fa-download"></i>
+                    Carregar Backup Completo
+                </button>
+                
+                <div id="backup-info" style="text-align: center; font-size: 14px; color: #B0C4DE; max-width: 400px;">
+                    <p><strong>Informações do Backup:</strong></p>
+                    <p id="backup-stats" style="margin: 10px 0;">Carregando estatísticas...</p>
+                    <p style="margin-top: 15px; font-size: 12px; color: #8B9DC3;">
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         const BIN_ID = '68f7cdf4d0ea881f40b17261';
         const PASSWORD_BIN_ID = '68d7e57bd0ea881f408cf33b';
+        const BACKUP_BIN_ID = '69ba873eb7ec241ddc7c5c7f';
         const API_KEY = '$2a$10$2elKW8TT6o.K3V176efqwu7kOfD1PnS3D/F0s4Tczc3MYmaU.N1bi';
         let colaboradores = [];
         let cargos = new Set([]);
@@ -1441,27 +1501,407 @@
             }
         }
 
-        async function saveData(data) {
-    try {
-        await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Master-Key': API_KEY
-            },
-            body: JSON.stringify({
-                colaboradores,
-                cargos: [...cargos],
-                unidades: [...unidades],
-                campanhas: [...campanhas],
-                conquistasCadastradas,
-                cursosCadastrados
-            })
-        });
-    } catch (error) {
-        console.error('Erro ao salvar dados:', error);
-    }
-}
+        // Validação de integridade dos dados
+        function validateDataIntegrity(data) {
+            const errors = [];
+            
+            if (!Array.isArray(data.colaboradores)) {
+                errors.push('colaboradores deve ser um array');
+            }
+            
+            if (!Array.isArray(data.cargos)) {
+                errors.push('cargos deve ser um array');
+            }
+            
+            if (!Array.isArray(data.unidades)) {
+                errors.push('unidades deve ser um array');
+            }
+            
+            if (!Array.isArray(data.campanhas)) {
+                errors.push('campanhas deve ser um array');
+            }
+            
+            if (!Array.isArray(data.conquistasCadastradas)) {
+                errors.push('conquistasCadastradas deve ser um array');
+            }
+            
+            if (!Array.isArray(data.cursosCadastrados)) {
+                errors.push('cursosCadastrados deve ser um array');
+            }
+            
+            // Verificar se arrays estão vazios quando não deveriam
+            if (data.colaboradores.length === 0 && localStorage.getItem('hasData') === 'true') {
+                errors.push('ALERTA: colaboradores está vazio mas havia dados antes');
+            }
+            
+            return errors;
+        }
+
+        // Função para enviar backup para o bin dedicado
+        async function downloadBackup() {
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            
+            try {
+                // Feedback visual de carregamento
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
+                btn.disabled = true;
+                
+                // Preparar dados completos do backup
+                const backupData = {
+                    timestamp: new Date().toISOString(),
+                    version: '1.0',
+                    data: {
+                        colaboradores,
+                        cargos: [...cargos],
+                        unidades: [...unidades],
+                        campanhas: [...campanhas],
+                        conquistasCadastradas,
+                        cursosCadastrados
+                    },
+                    metadata: {
+                        totalColaboradores: colaboradores.length,
+                        totalCargos: cargos.size,
+                        totalUnidades: unidades.size,
+                        totalCampanhas: campanhas.size,
+                        totalConquistas: conquistasCadastradas.length,
+                        totalCursos: cursosCadastrados.length,
+                        exportDate: new Date().toLocaleString('pt-BR')
+                    }
+                };
+                
+                // Enviar para o bin de backup
+                const response = await fetch(`https://api.jsonbin.io/v3/b/${BACKUP_BIN_ID}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Master-Key': API_KEY,
+                        'X-Bin-Name': `backup_${new Date().toISOString().split('T')[0].replace(/-/g, '')}_${new Date().toTimeString().split(' ')[0].replace(/:/g, '')}`
+                    },
+                    body: JSON.stringify(backupData)
+                });
+                
+                if (response.ok) {
+                    // Log de auditoria
+                    auditor.log('BACKUP_SENT', `Backup enviado para o bin ${BACKUP_BIN_ID}`);
+                    
+                    // Feedback visual de sucesso
+                    btn.innerHTML = '<i class="fas fa-check"></i> Backup Enviado!';
+                    btn.style.background = 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
+                    
+                    // Mostrar detalhes do backup
+                    const timestamp = new Date().toLocaleString('pt-BR');
+                    alert(`✅ Backup enviado com sucesso!\n\n` +
+                          `Data e hora: ${timestamp}\n` +
+                          `Colaboradores: ${backupData.metadata.totalColaboradores}\n` +
+                          `Total de registros: ${backupData.metadata.totalColaboradores + backupData.metadata.totalCargos + backupData.metadata.totalUnidades}\n\n` +
+                          `Dados atualizados`);
+                    
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+            } catch (error) {
+                console.error('Erro ao enviar backup:', error);
+                alert('Erro ao enviar backup. Tente novamente.\n\nDetalhes: ' + error.message);
+                
+                // Feedback visual de erro
+                btn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Erro no Envio';
+                btn.style.background = 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)';
+            }
+            
+            // Restaurar botão após 3 segundos
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+                btn.disabled = false;
+            }, 3000);
+        }
+        
+        // Função para carregar backup do bin dedicado
+        async function loadBackup() {
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            
+            try {
+                // Confirmação de segurança exigindo "SIM"
+                const confirmacao = prompt(
+                    '⚠️ **ATENÇÃO - OPERAÇÃO IRREVERSÍVEL** ⚠️\n\n' +
+                    'Você está prestes a SOBRESCREVER TODOS os dados do sistema com o backup do bin de backup.\n\n' +
+                    '• Todos os dados atuais serão PERDIDOS\n' +
+                    '• Esta operação NÃO PODE ser desfeita\n' +
+                    'Para confirmar, digite exatamente "SIM" (maiúsculas):'
+                );
+                
+                if (confirmacao !== 'SIM') {
+                    alert('❌ Operação cancelada. Você deve digitar exatamente "SIM" para continuar.');
+                    return;
+                }
+                
+                // Feedback visual de carregamento
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Carregando...';
+                btn.disabled = true;
+                
+                // Carregar dados do bin de backup
+                const response = await fetch(`https://api.jsonbin.io/v3/b/${BACKUP_BIN_ID}/latest`, {
+                    headers: { 'X-Master-Key': API_KEY }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const backupData = await response.json();
+                
+                // Verificar estrutura dos dados - o backup pode estar diretamente no record ou aninhado
+                let data;
+                if (backupData.record) {
+                    if (backupData.record.data) {
+                        data = backupData.record.data;
+                    } else if (backupData.record.colaboradores) {
+                        // Se não tiver 'data', mas tiver 'colaboradores' direto no record
+                        data = backupData.record;
+                    } else {
+                        throw new Error('Bin de backup não contém dados válidos');
+                    }
+                } else {
+                    // Se não tiver 'record', verificar se os dados estão direto no response
+                    data = backupData;
+                }
+                
+                // Validar estrutura dos dados
+                if (!data.colaboradores || !Array.isArray(data.colaboradores)) {
+                    throw new Error('Dados de colaboradores inválidos no backup');
+                }
+                
+                // Log de auditoria
+                auditor.log('BACKUP_LOADED', `Backup carregado do bin ${BACKUP_BIN_ID}`, {
+                    timestamp: backupData.record?.timestamp || data.timestamp || new Date().toISOString(),
+                    totalColaboradores: data.colaboradores.length,
+                    backupVersion: backupData.record?.version || data.version || 'N/A'
+                });
+                
+                // Aplicar dados do backup
+                colaboradores = data.colaboradores || [];
+                cargos = new Set(data.cargos || []);
+                unidades = new Set(data.unidades || []);
+                campanhas = new Set(data.campanhas || []);
+                conquistasCadastradas = data.conquistasCadastradas || [];
+                cursosCadastrados = data.cursosCadastrados || [];
+                
+                // Salvar dados no banco principal
+                const saveSuccess = await saveData({
+                    colaboradores,
+                    cargos: [...cargos],
+                    unidades: [...unidades],
+                    campanhas: [...campanhas],
+                    conquistasCadastradas,
+                    cursosCadastrados
+                });
+                
+                if (!saveSuccess) {
+                    throw new Error('Falha ao salvar dados após carregar backup');
+                }
+                
+                // Atualizar interface
+                updateAnoFilter();
+                updateFilters();
+                updateRanking();
+                updateColaboradoresList();
+                updateCargosList();
+                updateUnidadesList();
+                updateConquistasList();
+                updateCursosList();
+                updateColaboradoresSelects();
+                updateConquistaSelect();
+                updateCursoSelect();
+                updateBackupStats();
+                verificarCampanhasInvalidas();
+                
+                // Feedback visual de sucesso
+                btn.innerHTML = '<i class="fas fa-check"></i> Backup Carregado!';
+                btn.style.background = 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
+                
+                // Mostrar detalhes do carregamento
+                const backupTimestamp = backupData.record?.timestamp || data.timestamp || 
+                    new Date().toISOString();
+                const formattedTimestamp = backupTimestamp ? 
+                    new Date(backupTimestamp).toLocaleString('pt-BR') : 
+                    'Data não disponível';
+                    
+                alert(`✅ Backup carregado com sucesso!\n\n` +
+                      `Data do backup: ${formattedTimestamp}\n` +
+                      `Versão: ${backupData.record?.version || data.version || 'N/A'}\n` +
+                      `Colaboradores: ${colaboradores.length}\n` +
+                      `Cargos: ${cargos.size}\n` +
+                      `Unidades: ${unidades.size}\n` +
+                      `Campanhas: ${campanhas.size}\n\n` +
+                      `Todos os dados foram atualizados!`);
+                
+            } catch (error) {
+                console.error('Erro ao carregar backup:', error);
+                alert('Erro ao carregar backup. Tente novamente.\n\nDetalhes: ' + error.message);
+                
+                // Feedback visual de erro
+                btn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Erro no Carregamento';
+                btn.style.background = 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)';
+            }
+            
+            // Restaurar botão após 3 segundos
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.style.background = 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
+                btn.disabled = false;
+            }, 3000);
+        }
+        function updateBackupStats() {
+            const statsElement = document.getElementById('backup-stats');
+            if (!statsElement) return;
+            
+            const totalRegistros = colaboradores.reduce((total, col) => {
+                return total + (col.historico ? col.historico.length : 0) + 
+                              (col.conquistas ? col.conquistas.length : 0) + 
+                              (col.cursos ? col.cursos.length : 0);
+            }, 0);
+            
+            const stats = `
+                • ${colaboradores.length} colaboradores cadastrados<br>
+                • ${cargos.size} tipos de cargo<br>
+                • ${unidades.size} unidades<br>
+                • ${campanhas.size} campanhas<br>
+                • ${conquistasCadastradas.length} conquistas disponíveis<br>
+                • ${cursosCadastrados.length} cursos disponíveis<br>
+                • ${totalRegistros} registros totais
+            `;
+            
+            statsElement.innerHTML = stats;
+        }
+
+        // Sistema de auditoria e logging para alterações críticas
+        class AuditLogger {
+            constructor() {
+                this.logs = [];
+                this.maxLogs = 100; // Manter apenas os últimos 100 logs
+            }
+
+            log(action, details, user = 'system') {
+                const timestamp = new Date().toISOString();
+                const logEntry = {
+                    timestamp,
+                    action,
+                    details,
+                    user,
+                    id: Date.now() + Math.random()
+                };
+                
+                this.logs.unshift(logEntry);
+                
+                // Manter apenas os logs mais recentes
+                if (this.logs.length > this.maxLogs) {
+                    this.logs = this.logs.slice(0, this.maxLogs);
+                }
+                
+                // Salvar logs no localStorage
+                try {
+                    localStorage.setItem('auditLogs', JSON.stringify(this.logs));
+                } catch (error) {
+                    console.warn('Não foi possível salvar logs no localStorage:', error);
+                }
+                
+                // Log no console
+                console.log(`🔍 AUDIT: [${timestamp}] ${action} - ${details}`, logEntry);
+            }
+
+            getLogs(limit = 50) {
+                return this.logs.slice(0, limit);
+            }
+
+            clearLogs() {
+                this.logs = [];
+                localStorage.removeItem('auditLogs');
+                this.log('LOGS_CLEARED', 'Logs de auditoria limpos pelo usuário');
+            }
+
+            loadLogs() {
+                try {
+                    const savedLogs = localStorage.getItem('auditLogs');
+                    if (savedLogs) {
+                        this.logs = JSON.parse(savedLogs);
+                    }
+                } catch (error) {
+                    console.warn('Erro ao carregar logs do localStorage:', error);
+                    this.logs = [];
+                }
+            }
+        }
+
+        // Instância global do auditor
+        const auditor = new AuditLogger();
+
+        // Função para registrar alterações críticas
+        function logCriticalChange(action, details, data = null) {
+            auditor.log(action, details, 'user');
+        }
+
+        // Modificar funções críticas para incluir auditoria
+        async function saveData(data = null) {
+            try {
+                // Usar dados fornecidos ou variáveis globais
+                const dataToSave = data || {
+                    colaboradores,
+                    cargos: [...cargos],
+                    unidades: [...unidades],
+                    campanhas: [...campanhas],
+                    conquistasCadastradas,
+                    cursosCadastrados
+                };
+                
+                // Validar integridade dos dados
+                const validationErrors = validateDataIntegrity(dataToSave);
+                if (validationErrors.length > 0) {
+                    console.error('❌ Erros de validação:', validationErrors);
+                    return false;
+                }
+                
+                // Verificar se está tentando salvar dados vazios quando havia dados antes
+                const hasExistingData = colaboradores.length > 0 || cargos.size > 0 || unidades.size > 0;
+                const hasDataToSave = dataToSave.colaboradores.length > 0 || dataToSave.cargos.length > 0 || dataToSave.unidades.length > 0;
+                
+                if (hasExistingData && !hasDataToSave) {
+                    const confirmReset = confirm('⚠️ ATENÇÃO: Você está tentando sobrescrever dados existentes com dados vazios. Isso pode causar PERDA TOTAL DE DADOS.\n\nDeseja continuar mesmo assim?');
+                    if (!confirmReset) {
+                        console.log('❌ Salvamento cancelado pelo usuário para evitar perda de dados');
+                        return false;
+                    }
+                }
+                
+                // Salvar dados
+                const response = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Master-Key': API_KEY
+                    },
+                    body: JSON.stringify(dataToSave)
+                });
+                
+                if (response.ok) {
+                    // Marcar que há dados no sistema
+                    if (dataToSave.colaboradores.length > 0) {
+                        localStorage.setItem('hasData', 'true');
+                    }
+                    console.log('✅ Dados salvos com sucesso');
+                    return true;
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+            } catch (error) {
+                console.error('❌ Erro ao salvar dados:', error);
+                alert(`Erro ao salvar dados: ${error.message}\n\nTente novamente ou contate o suporte.`);
+                return false;
+            }
+        }
 
         async function loadPassword() {
             try {
@@ -2934,16 +3374,26 @@ function removeHistorico(colId, idx, tipo) {
     openEditModal(colId);
 }
 
-        function deleteColaborador(colId) {
+        async function deleteColaborador(colId) {
     const confirmacao = prompt('Digite "DELETAR" para confirmar a exclusão do colaborador:');
     if (confirmacao === 'DELETAR') {
+        // Log antes da exclusão
+        const colaboradorToDelete = colaboradores.find(c => c.id === colId);
+        if (colaboradorToDelete) {
+            logCriticalChange('DELETE_COLABORADOR', 
+                `Colaborador excluído: ${colaboradorToDelete.nome} (ID: ${colId})`, 
+                colaboradorToDelete);
+        }
+        
         colaboradores = colaboradores.filter(c => c.id !== colId);
-        saveData({ colaboradores, cargos: [...cargos], unidades: [...unidades] });
-        updateColaboradoresList();
-        updateFilters();
-        updateRanking();
-        updateColaboradoresSelects();
-        closeEditModal();
+        const success = await saveData({ colaboradores, cargos: [...cargos], unidades: [...unidades] });
+        
+        if (success) {
+            updateColaboradoresList();
+            updateFilters();
+            updateRanking();
+            closeEditModal();
+        }
     } else {
         alert('Exclusão cancelada. Você deve digitar exatamente "DELETAR".');
     }
@@ -3014,6 +3464,11 @@ function removeHistorico(colId, idx, tipo) {
 
 async function init() {
     showLoading();
+    
+    // Inicializar sistema de auditoria
+    auditor.loadLogs();
+    auditor.log('SYSTEM_INIT', 'Sistema inicializado');
+    
     const data = await loadData();
     colaboradores = data.colaboradores || [];
     cargos = new Set(data.cargos || []);
@@ -3086,6 +3541,7 @@ async function init() {
     updateColaboradoresSelects();
     updateConquistaSelect();
     updateCursoSelect();
+    updateBackupStats();
     verificarCampanhasInvalidas();
     hideLoading();
 }
@@ -4636,11 +5092,71 @@ async function migrarRegistrosSemCampanha() {
     let detalhesMigracao = {};
     let tiposCorrecao = { semCampanha: 0, campanhaInvalida: 0, conquistasSemCampanha: 0 };
     
+    // Contar registros que serão migrados antes de modificar
+    colaboradores.forEach(col => {
+        // === CONTAR HISTÓRICO SEM CAMPANHA ===
+        if (col.historico) {
+            col.historico.forEach(entry => {
+                if (entry.tipo === 'pontos' || entry.tipo === 'curso' || entry.tipo === 'nota' || entry.tipo === 'conquista') {
+                    if (!entry.campanha || !campanhasValidas.has(entry.campanha)) {
+                        if (!entry.campanha) {
+                            tiposCorrecao.semCampanha++;
+                        } else {
+                            tiposCorrecao.campanhaInvalida++;
+                        }
+                        registrosMigrados++;
+                    }
+                }
+            });
+        }
+
+        // === CONTAR CONQUISTAS SEM CAMPANHA ===
+        if (col.conquistas && Array.isArray(col.conquistas)) {
+            col.conquistas.forEach(conq => {
+                if (!conq.campanha) {
+                    tiposCorrecao.conquistasSemCampanha++;
+                    registrosMigrados++;
+                }
+            });
+        }
+    });
+
+    if (registrosMigrados === 0) {
+        alert('ℹ️ Nenhum registro encontrado para migrar. Todos os registros já possuem campanhas válidas associadas.');
+        return;
+    }
+
+    // Confirmação detalhada com aviso de segurança
+    const confirmacaoMensagem = `⚠️ **OPERAÇÃO DE MASSA - IRREVERSÍVEL** ⚠️\n\n` +
+        `Você está prestes a migrar ${registrosMigrados} registros para "${primeiraCampanha}":\n\n` +
+        `• ${tiposCorrecao.semCampanha} registros de histórico sem campanha\n` +
+        `• ${tiposCorrecao.campanhaInvalida} registros com campanhas inválidas\n` +
+        `• ${tiposCorrecao.conquistasSemCampanha} conquistas sem campanha\n\n` +
+        `**AVISO IMPORTANTE:**\n` +
+        `• Esta ação modificará permanentemente ${registrosMigrados} registros\n` +
+        `• Faça um backup manual na aba Backup antes de continuar\n` +
+        `• Esta operação não pode ser desfeita manualmente\n\n` +
+        `Deseja continuar com a migração?`;
+    
+    const confirmacao = confirm(confirmacaoMensagem);
+    if (!confirmacao) {
+        console.log('❌ Migração cancelada pelo usuário');
+        return;
+    }
+
+    // Log de auditoria para migração em massa
+    logCriticalChange('MASS_MIGRATION', 
+        `Iniciando migração de ${registrosMigrados} registros para campanha "${primeiraCampanha}"`, 
+        { registrosMigrados, primeiraCampanha, tiposCorrecao });
+
+    // Realizar migração
+    console.log('🔄 Iniciando migração de registros...');
+    let migracoesRealizadas = 0;
+    
     colaboradores.forEach(col => {
         // === CORRIGIR HISTÓRICO SEM CAMPANHA ===
         if (col.historico) {
             col.historico.forEach(entry => {
-                // Verifica se é um tipo de registro que deve ter campanha
                 if (entry.tipo === 'pontos' || entry.tipo === 'curso' || entry.tipo === 'nota' || entry.tipo === 'conquista') {
                     let precisaMigrar = false;
                     let motivo = '';
@@ -4649,19 +5165,17 @@ async function migrarRegistrosSemCampanha() {
                     if (!entry.campanha) {
                         precisaMigrar = true;
                         motivo = 'semCampanha';
-                        tiposCorrecao.semCampanha++;
                     }
                     // Caso 2: Tem campanha mas não está na lista de campanhas válidas
                     else if (!campanhasValidas.has(entry.campanha)) {
                         precisaMigrar = true;
                         motivo = 'campanhaInvalida';
-                        tiposCorrecao.campanhaInvalida++;
                     }
                     
                     if (precisaMigrar) {
                         const campanhaAntiga = entry.campanha || '(sem campanha)';
                         entry.campanha = primeiraCampanha;
-                        registrosMigrados++;
+                        migracoesRealizadas++;
                         
                         if (!detalhesMigracao[col.nome]) {
                             detalhesMigracao[col.nome] = { total: 0, detalhes: [] };
@@ -4678,8 +5192,7 @@ async function migrarRegistrosSemCampanha() {
             col.conquistas.forEach(conq => {
                 if (!conq.campanha) {
                     conq.campanha = primeiraCampanha;
-                    tiposCorrecao.conquistasSemCampanha++;
-                    registrosMigrados++;
+                    migracoesRealizadas++;
                     
                     if (!detalhesMigracao[col.nome]) {
                         detalhesMigracao[col.nome] = { total: 0, detalhes: [] };
@@ -4691,41 +5204,39 @@ async function migrarRegistrosSemCampanha() {
         }
     });
 
-    if (registrosMigrados > 0) {
-        const confirmacao = confirm(`Deseja migrar ${registrosMigrados} registros para "${primeiraCampanha}"?\n\n` +
-            `• ${tiposCorrecao.semCampanha} registros de histórico sem campanha\n` +
-            `• ${tiposCorrecao.campanhaInvalida} registros com campanhas inválidas\n` +
-            `• ${tiposCorrecao.conquistasSemCampanha} conquistas sem campanha\n\n` +
-            `Esta ação não pode ser desfeita.`);
-        
-        if (!confirmacao) return;
-        
-        await saveData({ colaboradores, cargos: [...cargos], unidades: [...unidades], campanhas: [...campanhas] });
-        
-        let mensagem = `✅ Migração concluída com sucesso!\n\n`;
-        mensagem += `Total de registros migrados: ${registrosMigrados}\n`;
-        mensagem += `Campanha de destino: ${primeiraCampanha}\n\n`;
-        mensagem += `Tipos de correção:\n`;
-        mensagem += `• Registros de histórico sem campanha: ${tiposCorrecao.semCampanha}\n`;
-        mensagem += `• Registros com campanhas inválidas: ${tiposCorrecao.campanhaInvalida}\n`;
-        mensagem += `• Conquistas sem campanha: ${tiposCorrecao.conquistasSemCampanha}\n\n`;
-        mensagem += `Detalhes por colaborador:\n`;
-        
-        Object.entries(detalhesMigracao).forEach(([nome, dados]) => {
-            mensagem += `• ${nome}: ${dados.total} registros\n`;
-        });
-        
-        alert(mensagem);
-        
-        // Atualizar as listas suspensas de campanha
-        updateCampanhasSelects();
-        updateFilters();
-        verificarCampanhasInvalidas();
-        updateColaboradoresList();
-        updateRanking();
-    } else {
-        alert('ℹ️ Nenhum registro encontrado para migrar. Todos os registros já possuem campanhas válidas associadas.');
+    // Salvar dados após migração
+    console.log('💾 Salvando dados após migração...');
+    const saveSuccess = await saveData({ colaboradores, cargos: [...cargos], unidades: [...unidades], campanhas: [...campanhas] });
+    
+    if (!saveSuccess) {
+        alert('❌ Falha ao salvar dados após migração. Os dados podem estar inconsistentes.\n\nVerifique o sistema e contate o suporte se necessário.');
+        return;
     }
+    
+    // Sucesso
+    let mensagem = `✅ Migração concluída com sucesso!\n\n`;
+    mensagem += `Total de registros migrados: ${migracoesRealizadas}\n`;
+    mensagem += `Campanha de destino: ${primeiraCampanha}\n\n`;
+    mensagem += `Tipos de correção:\n`;
+    mensagem += `• Registros de histórico sem campanha: ${tiposCorrecao.semCampanha}\n`;
+    mensagem += `• Registros com campanhas inválidas: ${tiposCorrecao.campanhaInvalida}\n`;
+    mensagem += `• Conquistas sem campanha: ${tiposCorrecao.conquistasSemCampanha}\n\n`;
+    mensagem += `Detalhes por colaborador:\n`;
+    
+    Object.entries(detalhesMigracao).forEach(([nome, dados]) => {
+        mensagem += `• ${nome}: ${dados.total} registros\n`;
+    });
+    
+    alert(mensagem);
+    
+    // Atualizar as listas suspensas de campanha
+    updateCampanhasSelects();
+    updateFilters();
+    verificarCampanhasInvalidas();
+    updateColaboradoresList();
+    updateRanking();
+    
+    console.log(`✅ Migração concluída: ${migracoesRealizadas} registros processados`);
 }
 
 function verificarCampanhasInvalidas() {
